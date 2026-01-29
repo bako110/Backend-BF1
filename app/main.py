@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
     await init_db()
     await cache_manager.connect()
     yield
-    # Cleanup
+    # Cleanups
     await cache_manager.disconnect()
 
 app = FastAPI(
