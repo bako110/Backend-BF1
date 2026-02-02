@@ -1,6 +1,9 @@
 """
 Script pour peupler la base de données avec des données de test pour BF1 TV
 """
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from datetime import datetime, timedelta
 from app.models.user import User
 from app.models.show import Show

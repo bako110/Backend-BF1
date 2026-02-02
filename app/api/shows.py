@@ -93,12 +93,14 @@ async def get_replay_shows(current_user=Depends(get_optional_user)):
 	await cache_manager.set(cache_key, shows, ttl=300)
 	return shows
 @router.get("/{show_id}", response_model=ShowOut)
+
 async def get_one_show(show_id: str, current_user=Depends(get_optional_user)):
 	show = await get_show(show_id)
 	if not show:
 		raise HTTPException(status_code=404, detail="Show not found")
 	return show
 @router.put("/{show_id}", response_model=ShowOut)
+
 async def update_one_show(show_id: str, show: ShowCreate, current_user=Depends(get_current_user)):
 	updated = await update_show(show_id, show)
 	if not updated:
