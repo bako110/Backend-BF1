@@ -8,7 +8,16 @@ router = APIRouter()
 
 @router.post("/", response_model=MovieOut)
 async def add_movie(movie: MovieCreate, current_user=Depends(get_admin_user)):
-	return await create_movie(movie)
+	new_movie = await create_movie(movie)
+	
+	# Notifier tous les utilisateurs du nouveau film
+	try:
+		from app.services.notification_service import notify_all_users_new_movie
+		await notify_all_users_new_movie(new_movie.title, str(new_movie.id))
+	except Exception as e:
+		print(f"⚠️ Erreur envoi notifications nouveau film: {e}")
+	
+	return new_movie
 
 @router.get("/")
 async def get_all_movies(

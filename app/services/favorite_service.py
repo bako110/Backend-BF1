@@ -35,6 +35,14 @@ async def add_favorite(user_id: str, data: FavoriteCreate) -> Optional[Dict]:
 	)
 	await fav.insert()
 	
+	# Envoyer une notification
+	try:
+		from app.services.notification_service import send_favorite_added_notification
+		content_title = content.title if hasattr(content, 'title') else "Contenu"
+		await send_favorite_added_notification(user_id, content_title, content_type)
+	except Exception as e:
+		print(f"⚠️ Erreur envoi notification favori: {e}")
+	
 	return {
 		"success": True,
 		"message": "Ajouté aux favoris",

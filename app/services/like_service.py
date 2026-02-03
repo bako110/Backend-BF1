@@ -7,35 +7,49 @@ from typing import List, Optional, Dict, Any
 
 async def toggle_like(user_id: str, data: LikeCreate) -> Dict[str, any]:
     """Toggle like (ajouter ou retirer) - évite les doublons"""
-    # Vérifier que le contenu existe
-    if data.content_type == "movie":
-        content = await Movie.get(data.content_id)
-    else:
-        content = await Show.get(data.content_id)
-    
-    if not content:
-        return {"success": False, "message": "Contenu introuvable"}
-    
-    # Vérifier si le like existe déjà
-    existing_like = await Like.find_one(
-        Like.user_id == user_id,
-        Like.content_id == data.content_id,
-        Like.content_type == data.content_type
-    )
-    
-    if existing_like:
-        # Retirer le like
-        await existing_like.delete()
-        return {"success": True, "action": "unliked", "message": "Like retiré"}
-    else:
-        # Ajouter le like
-        like = Like(
-            user_id=user_id,
-            content_id=data.content_id,
-            content_type=data.content_type
+    try:
+        print(f"🔍 Toggle like - User: {user_id}, Content: {data.content_id}, Type: {data.content_type}")
+        
+        # Vérifier que le contenu existe
+        if data.content_type == "movie":
+            content = await Movie.get(data.content_id)
+            print(f"📽️ Film trouvé: {content.title if content else 'None'}")
+        else:
+            content = await Show.get(data.content_id)
+            print(f"📺 Émission trouvée: {content.title if content else 'None'}")
+        
+        if not content:
+            print(f"❌ Contenu introuvable: {data.content_id}")
+            return {"success": False, "message": "Contenu introuvable"}
+        
+        # Vérifier si le like existe déjà
+        existing_like = await Like.find_one(
+            Like.user_id == user_id,
+            Like.content_id == data.content_id,
+            Like.content_type == data.content_type
         )
-        await like.insert()
-        return {"success": True, "action": "liked", "message": "Like ajouté", "like_id": str(like.id)}
+        
+        if existing_like:
+            # Retirer le like
+            print(f"💔 Retrait du like existant: {existing_like.id}")
+            await existing_like.delete()
+            return {"success": True, "action": "unliked", "message": "Like retiré"}
+        else:
+            # Ajouter le like
+            print(f"❤️ Ajout d'un nouveau like")
+            like = Like(
+                user_id=user_id,
+                content_id=data.content_id,
+                content_type=data.content_type
+            )
+            await like.insert()
+            print(f"✅ Like ajouté avec succès: {like.id}")
+            return {"success": True, "action": "liked", "message": "Like ajouté", "like_id": str(like.id)}
+    except Exception as e:
+        print(f"❌ Erreur dans toggle_like: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
 
 async def get_like(like_id: str) -> Optional[Like]:
     """Récupérer un like par ID"""

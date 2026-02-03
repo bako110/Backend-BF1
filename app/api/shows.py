@@ -26,6 +26,14 @@ async def update_show_live(show_id: str, data: ShowLiveUpdate, current_user=Depe
 async def add_show(show: ShowCreate, current_user=Depends(get_admin_user)):
 	result = await create_show(show)
 	await cache_manager.delete_pattern("shows:*")
+	
+	# Notifier tous les utilisateurs de la nouvelle émission
+	try:
+		from app.services.notification_service import notify_all_users_new_show
+		await notify_all_users_new_show(result.title, str(result.id))
+	except Exception as e:
+		print(f"⚠️ Erreur envoi notifications nouvelle émission: {e}")
+	
 	return result
 @router.get("/", response_model=List[ShowOut])
 async def get_all_shows(

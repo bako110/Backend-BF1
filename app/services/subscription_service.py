@@ -10,6 +10,21 @@ async def get_all_subscriptions(skip: int = 0, limit: int = 1000) -> List:
 async def create_subscription(data: SubscriptionCreate) -> Subscription:
 	sub = Subscription(**data.dict())
 	await sub.insert()
+	
+	# Mettre à jour le statut premium de l'utilisateur
+	from app.models.user import User
+	user = await User.get(data.user_id)
+	if user:
+		user.is_premium = True
+		await user.save()
+		
+		# Envoyer une notification premium
+		try:
+			from app.services.notification_service import send_premium_notification
+			await send_premium_notification(data.user_id)
+		except Exception as e:
+			print(f"⚠️ Erreur envoi notification premium: {e}")
+	
 	return sub
 
 async def get_subscription(sub_id: str) -> Optional[Subscription]:

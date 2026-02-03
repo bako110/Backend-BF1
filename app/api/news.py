@@ -16,7 +16,16 @@ class NewsLiveUpdate(BaseModel):
 
 @router.post("/", response_model=NewsOut)
 async def add_news(news: NewsCreate, current_user=Depends(get_admin_user)):
-	return await create_news(news)
+	new_news = await create_news(news)
+	
+	# Notifier tous les utilisateurs de la nouvelle actualité
+	try:
+		from app.services.notification_service import notify_all_users_new_news
+		await notify_all_users_new_news(new_news.title, str(new_news.id))
+	except Exception as e:
+		print(f"⚠️ Erreur envoi notifications nouvelle actualité: {e}")
+	
+	return new_news
 
 @router.get("/")
 async def get_all_news(

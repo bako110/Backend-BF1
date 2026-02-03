@@ -14,8 +14,13 @@ async def list_all_likes(current_user=Depends(get_admin_user), skip: int = 0, li
 @router.post("/toggle")
 async def toggle_like_api(like: LikeCreate, current_user=Depends(get_current_user)):
     """Toggle like (ajouter ou retirer)"""
-    result = await toggle_like(current_user.id, like)
-    return result
+    try:
+        result = await toggle_like(str(current_user.id), like)
+        return result
+    except Exception as e:
+        print(f"❌ Erreur toggle like: {str(e)}")
+        print(f"User ID: {current_user.id}, Content ID: {like.content_id}, Type: {like.content_type}")
+        raise HTTPException(status_code=500, detail=f"Erreur lors du toggle like: {str(e)}")
 
 @router.get("/content/{content_type}/{content_id}")
 async def list_likes(content_id: str, content_type: str, skip: int = 0, limit: int = 100):
