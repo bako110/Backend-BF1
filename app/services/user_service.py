@@ -17,6 +17,14 @@ async def create_user(data: UserCreate) -> User:
 		hashed_password=hashed_password,
 	)
 	await user.insert()
+	
+	# Envoyer une notification de bienvenue
+	try:
+		from app.services.notification_service import send_welcome_notification
+		await send_welcome_notification(str(user.id), user.username)
+	except Exception as e:
+		print(f"⚠️ Erreur envoi notification bienvenue: {e}")
+	
 	return user
 
 async def get_user(user_id: str) -> Optional[User]:
@@ -33,6 +41,7 @@ SECRET_KEY = os.getenv("JWT_SECRET_KEY", "changeme")
 ALGORITHM = "HS256"
 
 async def login_user_service(identifier: str, password: str):
+	print(f"🔐 Tentative de connexion avec: {identifier}")
 	# Recherche par email, username ou phone
 	user = await User.find_one({
 		"$or": [
@@ -42,10 +51,18 @@ async def login_user_service(identifier: str, password: str):
 		]
 	})
 	if not user:
+		print(f"❌ Utilisateur non trouvé: {identifier}")
 		return None
+	
+	print(f"✅ Utilisateur trouvé: {user.username} (email: {user.email})")
+	print(f"🔑 Vérification du mot de passe...")
+	
 	# Vérification du mot de passe hashé
 	if not pwd_context.verify(password, user.hashed_password):
+		print(f"❌ Mot de passe incorrect pour {user.username}")
 		return None
+	
+	print(f"✅ Mot de passe correct pour {user.username}")
 	# Génération d'un JWT réel
 	payload = {"sub": str(user.id)}
 	token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
