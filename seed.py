@@ -21,8 +21,8 @@ load_dotenv()
 
 async def init_db():
     """Initialiser la connexion à la base de données"""
-    MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-    DATABASE_NAME = os.getenv("DATABASE_NAME", "bf1_db")
+    MONGODB_URL = os.getenv("MONGODB_URL", "mongodb+srv://bakorobert2000:1jHcf2qX4D53KHyw@cluster0.hfr2vqx.mongodb.net/Bf1_db?retryWrites=true&w=majority&appName=Cluster0")
+    DATABASE_NAME = os.getenv("DATABASE_NAME", "Bf1_db")
     
     print(f"🔌 Connexion à MongoDB: {MONGODB_URL}")
     print(f"📦 Base de données: {DATABASE_NAME}\n")
