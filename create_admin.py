@@ -7,27 +7,44 @@ from app.config import init_db
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 async def create_admin():
+    """Créer un administrateur par défaut"""
     await init_db()
-    print("Création d'un administrateur :")
-    nom = input("Nom d'utilisateur : ")
-    prenom = input("Prénom (optionnel) : ")
-    email = input("Email : ")
-    phone = input("Téléphone (optionnel) : ")
-    password = input("Mot de passe : ")
-    print(f"Mot de passe saisi : {password}")
-    hashed_password = pwd_context.hash(password[:72])
-    print(f"Hash généré : {hashed_password}")
+    
+    # Vérifier si un admin existe déjà
+    existing_admin = await User.find_one(User.is_admin == True)
+    if existing_admin:
+        print(f"⚠️  Un administrateur existe déjà : {existing_admin.username}")
+        print(f"   Email: {existing_admin.email}")
+        return
+    
+    # Créer l'admin par défaut
+    username = "admin"
+    email = "admin@bf1.com"
+    password = "admin123"
+    
+    print("🔧 Création de l'administrateur par défaut...")
+    print(f"   Username: {username}")
+    print(f"   Email: {email}")
+    print(f"   Password: {password}")
+    
+    hashed_password = pwd_context.hash(password)
+    
     user = User(
-        username=nom,
+        username=username,
         email=email,
-        phone=phone if phone else None,
+        phone=None,
         hashed_password=hashed_password,
         is_admin=True,
         is_active=True,
-        is_premium=False,
+        is_premium=True,
     )
+    
     await user.insert()
-    print(f"Administrateur {nom} créé avec succès.")
+    print(f"✅ Administrateur créé avec succès!")
+    print(f"\n📝 Identifiants de connexion:")
+    print(f"   Username/Email: {username} ou {email}")
+    print(f"   Password: {password}")
+    print(f"\n⚠️  IMPORTANT: Changez ce mot de passe après la première connexion!")
 
 if __name__ == "__main__":
     asyncio.run(create_admin())

@@ -15,7 +15,7 @@ from app.utils.cache import cache_manager
 from app.utils.rate_limiter import RateLimitMiddleware
 
 from app.api import (
-    shows, movies, users, favorites, news, notifications, subscriptions, payments, premium, contact, comments, likes
+    shows, movies, users, favorites, news, notifications, subscriptions, payments, premium, contact, comments, likes, messages
 )
 
 from contextlib import asynccontextmanager
@@ -63,6 +63,7 @@ api_v1_router.include_router(premium.router, prefix="/premium", tags=["Premium"]
 api_v1_router.include_router(contact.router, prefix="/contact", tags=["Contact"])
 api_v1_router.include_router(comments.router, prefix="/comments", tags=["Comments"])
 api_v1_router.include_router(likes.router, prefix="/likes", tags=["Likes"])
+api_v1_router.include_router(messages.router, prefix="/messages", tags=["Messages"])
 
 # Monter le router API v1
 app.include_router(api_v1_router)

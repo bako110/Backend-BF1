@@ -10,6 +10,7 @@ from app.models.comment import Comment
 from app.models.news import News
 from app.models.notification import Notification
 from app.models.subscription import Subscription
+from app.models.message import Message
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,6 +22,6 @@ async def init_db():
     await init_beanie(
         database=client[db_name],
         document_models=[
-            Movie, User, Show, Favorite, Like, Comment, News, Notification, Subscription
+            Movie, User, Show, Favorite, Like, Comment, News, Notification, Subscription, Message
         ]
     )
