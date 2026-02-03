@@ -1,7 +1,11 @@
-
 from app.models.subscription import Subscription
 from app.schemas.subscription import SubscriptionCreate
 from typing import List, Optional
+
+async def get_all_subscriptions(skip: int = 0, limit: int = 1000) -> List:
+    """Récupérer tous les abonnements (pour admin)"""
+    subscriptions = await Subscription.find().skip(skip).limit(limit).to_list()
+    return [sub.dict() for sub in subscriptions]
 
 async def create_subscription(data: SubscriptionCreate) -> Subscription:
 	sub = Subscription(**data.dict())

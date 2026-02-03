@@ -1,13 +1,18 @@
 from fastapi import APIRouter, HTTPException, Depends
-from app.utils.auth import get_current_user
+from app.utils.auth import get_current_user, get_admin_user
 from app.schemas.favorite import FavoriteCreate
 from app.services.favorite_service import (
     add_favorite, get_favorite, list_favorites, 
-    remove_favorite, remove_favorite_by_content
+    remove_favorite, remove_favorite_by_content, get_all_favorites
 )
 from typing import List
 
 router = APIRouter()
+
+@router.get("/")
+async def list_all_favorites(current_user=Depends(get_admin_user), skip: int = 0, limit: int = 1000):
+	"""Lister tous les favoris (admin seulement)"""
+	return await get_all_favorites(skip, limit)
 
 @router.post("/")
 async def add_fav(fav: FavoriteCreate, current_user=Depends(get_current_user)):

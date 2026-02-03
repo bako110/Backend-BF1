@@ -3,11 +3,16 @@ from app.utils.auth import get_current_user, get_admin_user
 from app.schemas.comment import CommentCreate, CommentUpdate
 from app.services.comment_service import (
     add_comment, get_comments, get_comment, update_comment, 
-    delete_comment, count_comments, get_user_comments
+    delete_comment, count_comments, get_user_comments, get_all_comments
 )
 from typing import List
 
 router = APIRouter()
+
+@router.get("/")
+async def list_all_comments(current_user=Depends(get_admin_user), skip: int = 0, limit: int = 1000):
+    """Lister tous les commentaires (admin seulement)"""
+    return await get_all_comments(skip, limit)
 
 @router.post("/")
 async def create_comment(comment: CommentCreate, current_user=Depends(get_current_user)):

@@ -1,10 +1,15 @@
 from fastapi import APIRouter, HTTPException, Depends
-from app.utils.auth import get_current_user
+from app.utils.auth import get_current_user, get_admin_user
 from app.schemas.like import LikeCreate
-from app.services.like_service import toggle_like, get_likes, count_likes, check_user_liked, remove_like
+from app.services.like_service import toggle_like, get_likes, count_likes, check_user_liked, remove_like, get_all_likes
 from typing import List, Dict
 
 router = APIRouter()
+
+@router.get("/")
+async def list_all_likes(current_user=Depends(get_admin_user), skip: int = 0, limit: int = 1000):
+    """Lister tous les likes (admin seulement)"""
+    return await get_all_likes(skip, limit)
 
 @router.post("/toggle")
 async def toggle_like_api(like: LikeCreate, current_user=Depends(get_current_user)):

@@ -82,3 +82,17 @@ async def count_comments(content_id: str, content_type: str) -> int:
         Comment.content_id == content_id,
         Comment.content_type == content_type
     ).count()
+
+async def get_all_comments(skip: int = 0, limit: int = 1000) -> List[dict]:
+    """Récupérer tous les commentaires (pour admin)"""
+    comments = await Comment.find().skip(skip).limit(limit).to_list()
+    
+    # Enrichir avec les infos utilisateur
+    enriched_comments = []
+    for comment in comments:
+        user = await User.get(comment.user_id)
+        comment_dict = comment.dict()
+        comment_dict['username'] = user.username if user else "Utilisateur inconnu"
+        enriched_comments.append(comment_dict)
+    
+    return enriched_comments
