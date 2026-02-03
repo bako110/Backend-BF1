@@ -20,6 +20,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
+        # Extraire le token du format "Bearer <token>"
+        if token.startswith("Bearer "):
+            token = token[7:]  # Enlever "Bearer "
+        
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
         if user_id is None:
