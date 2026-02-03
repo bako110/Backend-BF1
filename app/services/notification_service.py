@@ -5,11 +5,21 @@ from app.models.user import User
 from typing import List, Optional
 
 async def delete_notification(notif_id: str, user_id: str) -> bool:
-	notif = await Notification.get(notif_id)
-	if not notif or notif.user_id != user_id:
+	try:
+		print(f"🗑️ [NotificationService] Tentative suppression notification {notif_id} pour user {user_id}")
+		notif = await Notification.get(notif_id)
+		if not notif:
+			print(f"❌ [NotificationService] Notification {notif_id} non trouvée")
+			return False
+		if notif.user_id != user_id:
+			print(f"❌ [NotificationService] User {user_id} non autorisé (owner: {notif.user_id})")
+			return False
+		await notif.delete()
+		print(f"✅ [NotificationService] Notification {notif_id} supprimée")
+		return True
+	except Exception as e:
+		print(f"❌ [NotificationService] Erreur suppression: {e}")
 		return False
-	await notif.delete()
-	return True
 
 async def create_notification(data: NotificationCreate) -> Notification:
 	notif = Notification(**data.dict())
