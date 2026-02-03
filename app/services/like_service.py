@@ -3,7 +3,7 @@ from app.models.user import User
 from app.models.movie import Movie
 from app.models.show import Show
 from app.schemas.like import LikeCreate
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 
 async def toggle_like(user_id: str, data: LikeCreate) -> Dict[str, any]:
     """Toggle like (ajouter ou retirer) - évite les doublons"""
@@ -94,3 +94,17 @@ async def remove_like(like_id: str, user_id: str, is_admin: bool = False) -> boo
     
     await like.delete()
     return True
+
+async def get_all_likes(skip: int = 0, limit: int = 1000) -> List[dict]:
+    """Récupérer tous les likes (pour admin)"""
+    likes = await Like.find().skip(skip).limit(limit).to_list()
+    
+    # Enrichir avec les infos utilisateur
+    enriched_likes = []
+    for like in likes:
+        user = await User.get(like.user_id)
+        like_dict = like.dict()
+        like_dict['username'] = user.username if user else "Utilisateur inconnu"
+        enriched_likes.append(like_dict)
+    
+    return enriched_likes

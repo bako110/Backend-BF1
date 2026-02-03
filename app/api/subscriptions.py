@@ -1,10 +1,15 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.utils.auth import get_current_user, get_admin_user
 from app.schemas.subscription import SubscriptionCreate, SubscriptionOut
-from app.services.subscription_service import create_subscription, get_subscription, list_subscriptions, cancel_subscription
+from app.services.subscription_service import create_subscription, get_subscription, list_subscriptions, cancel_subscription, get_all_subscriptions
 from typing import List
 
 router = APIRouter()
+
+@router.get("/")
+async def list_all_subscriptions(current_user=Depends(get_admin_user), skip: int = 0, limit: int = 1000):
+    """Lister tous les abonnements (admin seulement)"""
+    return await get_all_subscriptions(skip, limit)
 
 @router.post("/")
 async def add_subscription(sub: SubscriptionCreate, current_user=Depends(get_current_user)):

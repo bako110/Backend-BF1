@@ -97,3 +97,8 @@ async def remove_favorite_by_content(user_id: str, content_id: str, content_type
 	
 	await fav.delete()
 	return True
+
+async def get_all_favorites(skip: int = 0, limit: int = 1000) -> List[Dict]:
+	"""Récupérer tous les favoris (pour admin)"""
+	favorites = await Favorite.find().skip(skip).limit(limit).to_list()
+	return [fav.dict() for fav in favorites]
