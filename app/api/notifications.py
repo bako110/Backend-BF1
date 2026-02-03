@@ -37,6 +37,13 @@ async def mark_notification_read(notif_id: str, current_user=Depends(get_current
 		raise HTTPException(status_code=404, detail="Notification not found")
 	return {"ok": True}
 
+@router.get("/unread/count")
+async def get_unread_count(current_user=Depends(get_current_user)):
+	"""Compter les notifications non lues"""
+	notifications = await list_notifications(str(current_user.id))
+	unread_count = sum(1 for n in notifications if not n.get('is_read', False))
+	return {"count": unread_count}
+
 @router.delete("/{notif_id}")
 async def delete_notif(notif_id: str, current_user=Depends(get_current_user)):
 	"""Supprimer une notification"""
