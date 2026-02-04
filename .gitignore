@@ -69,5 +69,10 @@ media/
 uploads/
 output/
 
+!static/
+!static/.gitkeep
+!static/uploads/
+!static/uploads/.gitkeep
+
 # VSCode
 .vscode/
