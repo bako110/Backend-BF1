@@ -341,45 +341,60 @@ async def create_reminder(
     data: ProgramReminderCreate
 ) -> Optional[ProgramReminder]:
     """Créer un rappel pour un programme"""
-    
-    # Vérifier que le programme existe
-    program = await Program.get(data.program_id)
-    if not program:
-        return None
-    
-    # Vérifier si un rappel existe déjà
-    existing = await ProgramReminder.find_one(
-        And(
-            Eq(ProgramReminder.user_id, user_id),
-            Eq(ProgramReminder.program_id, data.program_id),
-            Eq(ProgramReminder.status, "scheduled")
+    try:
+        print(f"🔍 Création rappel - user_id: {user_id}, program_id: {data.program_id}")
+        
+        # Vérifier que le programme existe
+        program = await Program.get(data.program_id)
+        if not program:
+            print(f"❌ Programme non trouvé: {data.program_id}")
+            return None
+        
+        print(f"✅ Programme trouvé: {program.title}, start_time: {program.start_time}")
+        
+        # Vérifier si un rappel existe déjà
+        existing = await ProgramReminder.find_one(
+            And(
+                Eq(ProgramReminder.user_id, user_id),
+                Eq(ProgramReminder.program_id, data.program_id),
+                Eq(ProgramReminder.status, "scheduled")
+            )
         )
-    )
-    if existing:
-        return existing  # Rappel déjà programmé
-    
-    # Calculer l'heure d'envoi du rappel
-    reminder_time = program.start_time - timedelta(minutes=data.minutes_before)
-    
-    # Récupérer le nom de la chaîne si disponible
-    channel_name = None
-    if program.channel_id:
-        channel = await LiveChannel.get(program.channel_id)
-        if channel:
-            channel_name = channel.name
-    
-    reminder = ProgramReminder(
-        user_id=user_id,
-        program_id=data.program_id,
-        minutes_before=data.minutes_before,
-        reminder_type=data.reminder_type,
-        scheduled_for=reminder_time,
-        program_title=program.title,
-        program_start_time=program.start_time,
-        channel_name=channel_name
-    )
-    await reminder.insert()
-    return reminder
+        if existing:
+            print(f"ℹ️ Rappel déjà existant pour ce programme")
+            return existing  # Rappel déjà programmé
+        
+        # Calculer l'heure d'envoi du rappel
+        reminder_time = program.start_time - timedelta(minutes=data.minutes_before)
+        print(f"⏰ Heure du rappel calculée: {reminder_time}")
+        
+        # Récupérer le nom de la chaîne si disponible
+        channel_name = None
+        if program.channel_id:
+            channel = await LiveChannel.get(program.channel_id)
+            if channel:
+                channel_name = channel.name
+                print(f"📺 Chaîne trouvée: {channel_name}")
+        
+        reminder = ProgramReminder(
+            user_id=user_id,
+            program_id=data.program_id,
+            minutes_before=data.minutes_before,
+            reminder_type=data.reminder_type,
+            scheduled_for=reminder_time,
+            program_title=program.title,
+            program_start_time=program.start_time,
+            channel_name=channel_name
+        )
+        print(f"💾 Insertion du rappel...")
+        await reminder.insert()
+        print(f"✅ Rappel créé avec succès: {reminder.id}")
+        return reminder
+    except Exception as e:
+        print(f"❌ Erreur dans create_reminder: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
 
 
 async def get_user_reminders(

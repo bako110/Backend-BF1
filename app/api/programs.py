@@ -233,20 +233,28 @@ async def create_reminder(
     current_user=Depends(get_current_user)
 ):
     """Créer un rappel pour un programme"""
-    # Override program_id from URL
-    reminder_data = ProgramReminderCreate(
-        program_id=program_id,
-        minutes_before=data.minutes_before,
-        reminder_type=data.reminder_type
-    )
-    
-    reminder = await program_service.create_reminder(
-        user_id=str(current_user.id),
-        data=reminder_data
-    )
-    if not reminder:
-        raise HTTPException(status_code=404, detail="Programme non trouvé")
-    return reminder
+    try:
+        # Override program_id from URL
+        reminder_data = ProgramReminderCreate(
+            program_id=program_id,
+            minutes_before=data.minutes_before,
+            reminder_type=data.reminder_type
+        )
+        
+        reminder = await program_service.create_reminder(
+            user_id=str(current_user.id),
+            data=reminder_data
+        )
+        if not reminder:
+            raise HTTPException(status_code=404, detail="Programme non trouvé")
+        return reminder
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Erreur création rappel: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Erreur interne du serveur")
 
 
 @router.get("/reminders/my", response_model=List[ProgramReminderOut], tags=["Reminders"])
