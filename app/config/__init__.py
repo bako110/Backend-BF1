@@ -7,21 +7,29 @@ from app.models.show import Show
 from app.models.favorite import Favorite
 from app.models.like import Like
 from app.models.comment import Comment
-from app.models.news import News
+from app.models.breakingNews import BreakingNews
 from app.models.notification import Notification
 from app.models.subscription import Subscription
 from app.models.message import Message
+from app.models.subscription_plan import SubscriptionPlan
+from app.models.interview import Interview
+from app.models.popularPrograms import PopularPrograms
+from app.models.reel import Reel
+from app.models.replay import Replay
+from app.models.trendingShow import TrendingShow
+from app.models.share import Share
 from dotenv import load_dotenv
 
 load_dotenv()
 
 async def init_db():
-    db_url = os.getenv("MONGODB_URI", "mongodb://localhost:27017/bf1_db")
-    db_name = os.getenv("MONGODB_DBNAME", "bf1_db")
+    db_url = os.getenv("MONGODB_URI", "MONGODB_URI=mongodb://localhost:27017/Bf1_db_dev")
+    db_name = os.getenv("MONGODB_DBNAME", "Bf1_db_dev")
     client = AsyncIOMotorClient(db_url)
     await init_beanie(
         database=client[db_name],
         document_models=[
-            Movie, User, Show, Favorite, Like, Comment, News, Notification, Subscription, Message
+            Movie, User, Show, Favorite, Like, Comment, BreakingNews, Notification,
+            Subscription, SubscriptionPlan, Message, Interview, PopularPrograms, Reel, Replay, TrendingShow, Share
         ]
     )

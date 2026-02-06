@@ -5,12 +5,13 @@ from app.schemas.show import ShowCreate, ShowUpdate
 from typing import List, Optional, Dict
 from datetime import datetime
 
+
 async def set_show_live(show_id: str, is_live: bool, live_url: Optional[str] = None) -> Optional[Show]:
 	show = await Show.get(show_id)
 	if not show:
 		return None
 	show.is_live = is_live
-	show.live_url = live_url
+	show.stream_url = live_url
 	show.updated_at = datetime.utcnow()
 	await show.save()
 	return show
@@ -61,14 +62,14 @@ async def list_live_shows() -> List[Show]:
 	return await Show.find(Show.is_live == True).to_list()
 
 async def list_replay_shows() -> List[Show]:
-	return await Show.find(Show.replay_url != None).to_list()
+	return await Show.find(Show.is_replay == True).to_list()
 
 async def list_shows_by_date(date: str) -> List[Show]:
 	try:
 		date_obj = datetime.strptime(date, "%Y-%m-%d")
 	except Exception:
 		return []
-	return await Show.find({"start_time": {"$gte": date_obj, "$lt": date_obj.replace(hour=23, minute=59, second=59)}}).to_list()
+	return await Show.find({"replay_at": {"$gte": date_obj, "$lt": date_obj.replace(hour=23, minute=59, second=59)}}).to_list()
 
 async def list_shows_sorted(sort: str = "popularity", order: str = "desc") -> List[Show]:
 	# Dummy sort by featured for example, real popularity would need a field

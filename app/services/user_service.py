@@ -4,6 +4,7 @@ from app.models.user import User
 from app.schemas.user import UserCreate, UserOut
 from typing import List, Optional
 from passlib.context import CryptContext
+from datetime import datetime
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -33,6 +34,24 @@ async def get_user(user_id: str) -> Optional[User]:
 
 async def list_users() -> List[User]:
 	return await User.find_all().to_list()
+
+
+async def set_user_active(user_id: str, is_active: bool) -> Optional[User]:
+	user = await User.get(user_id)
+	if not user:
+		return None
+	user.is_active = is_active
+	user.updated_at = datetime.utcnow()
+	await user.save()
+	return user
+
+
+async def delete_user(user_id: str) -> bool:
+	user = await User.get(user_id)
+	if not user:
+		return False
+	await user.delete()
+	return True
 
 from jose import jwt
 import os

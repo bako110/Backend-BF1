@@ -62,7 +62,17 @@ async def send_welcome_notification(user_id: str, username: str):
 async def send_favorite_added_notification(user_id: str, content_title: str, content_type: str):
 	"""Envoyer une notification quand un contenu est ajouté aux favoris"""
 	try:
-		type_text = "film" if content_type == "movie" else "émission"
+		type_map = {
+			"movie": "film",
+			"show": "émission",
+			"breaking_news": "actualité",
+			"interview": "interview",
+			"reel": "reel",
+			"replay": "replay",
+			"trending_show": "tendance",
+			"popular_program": "programme"
+		}
+		type_text = type_map.get(content_type, "contenu")
 		notification = Notification(
 			user_id=user_id,
 			title="Ajouté aux favoris ⭐",

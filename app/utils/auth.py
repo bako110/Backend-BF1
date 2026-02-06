@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from app.schemas.token import Token
 from app.models.user import User
@@ -8,22 +8,18 @@ import os
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "changeme")
 ALGORITHM = "HS256"
-from fastapi.security import APIKeyHeader
-oauth2_scheme = APIKeyHeader(name="Authorization")
-optional_oauth2_scheme = HTTPBearer(auto_error=False)
+bearer_scheme = HTTPBearer()
+optional_bearer_scheme = HTTPBearer(auto_error=False)
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     credentials_exception = HTTPException(
         status_code=401,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        # Extraire le token du format "Bearer <token>"
-        if token.startswith("Bearer "):
-            token = token[7:]  # Enlever "Bearer "
-        
+        token = credentials.credentials
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
         if user_id is None:
@@ -40,7 +36,7 @@ async def get_admin_user(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
 
-async def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_oauth2_scheme)) -> Optional[User]:
+async def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_bearer_scheme)) -> Optional[User]:
     """Permet l'accès avec ou sans authentification (pour les endpoints publics)"""
     if credentials is None:
         return None

@@ -4,8 +4,17 @@ from datetime import datetime
 from bson import ObjectId
 
 class CommentBase(BaseModel):
-    content_id: str = Field(..., description="ID du contenu (movie ou show)")
-    content_type: Literal["movie", "show"] = Field(..., description="Type de contenu")
+    content_id: str = Field(..., description="ID du contenu")
+    content_type: Literal[
+        "movie",
+        "show",
+        "breaking_news",
+        "interview",
+        "reel",
+        "replay",
+        "trending_show",
+        "popular_program"
+    ] = Field(..., description="Type de contenu")
     text: str = Field(..., min_length=1, max_length=1000, description="Texte du commentaire")
 
 class CommentCreate(CommentBase):
@@ -14,10 +23,15 @@ class CommentCreate(CommentBase):
 class CommentUpdate(BaseModel):
     text: str = Field(..., min_length=1, max_length=1000, description="Nouveau texte")
 
+class CommentModerate(BaseModel):
+    is_hidden: bool = Field(..., description="Masquer/afficher")
+
 class CommentOut(CommentBase):
     id: str
     user_id: str
     username: Optional[str] = None
+    is_hidden: bool = False
+    hidden_at: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 

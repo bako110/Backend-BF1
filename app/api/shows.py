@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from app.utils.auth import get_current_user, get_admin_user, get_optional_user
 from app.utils.cache import cache_manager
-from app.schemas.show import ShowCreate, ShowOut
+from app.schemas.show import ShowCreate, ShowOut, ShowUpdate
 from app.services.show_service import (
 	create_show, get_show, list_shows, update_show, delete_show,
 	list_shows_by_category, list_shows_by_edition, list_shows_by_host,
@@ -14,11 +14,11 @@ router = APIRouter()
 
 class ShowLiveUpdate(BaseModel):
 	is_live: bool
-	live_url: str = None
+	stream_url: str = None
 
 @router.patch("/{show_id}/live", response_model=ShowOut)
 async def update_show_live(show_id: str, data: ShowLiveUpdate, current_user=Depends(get_admin_user)):
-	show = await set_show_live(show_id, data.is_live, data.live_url)
+	show = await set_show_live(show_id, data.is_live, data.stream_url)
 	if not show:
 		raise HTTPException(status_code=404, detail="Show not found")
 	return show
@@ -109,7 +109,7 @@ async def get_one_show(show_id: str, current_user=Depends(get_optional_user)):
 	return show
 @router.put("/{show_id}", response_model=ShowOut)
 
-async def update_one_show(show_id: str, show: ShowCreate, current_user=Depends(get_current_user)):
+async def update_one_show(show_id: str, show: ShowUpdate, current_user=Depends(get_current_user)):
 	updated = await update_show(show_id, show)
 	if not updated:
 		raise HTTPException(status_code=404, detail="Show not found")
