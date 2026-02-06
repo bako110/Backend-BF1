@@ -1,0 +1,28 @@
+from beanie import Document
+from pydantic import HttpUrl, Field
+from datetime import datetime
+from typing import Optional
+
+
+class Replay(Document):
+    title: str = Field(..., description="Titre du replay")
+    category: str = Field(..., description="Catégorie du replay")
+
+    video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
+    thumbnail: Optional[HttpUrl] = Field(None, description="Miniature du replay")
+
+    description: str = Field(..., description="Description du replay")
+    duration_minutes: int = Field(..., description="Durée en minutes")
+
+    program_title: Optional[str] = Field(None, description="Émission d'origine")
+    host: Optional[str] = Field(None, description="Animateur / présentateur")
+
+    views: int = Field(default=0, description="Nombre de vues")
+    rating: float = Field(default=0, ge=0, le=5, description="Note du replay (0 à 5)")
+
+    aired_at: datetime = Field(..., description="Date de diffusion originale")
+    created_at: datetime = Field(default_factory=datetime.utcnow, description="Date de création")
+    updated_at: Optional[datetime] = Field(None, description="Date de mise à jour")
+
+    class Settings:
+        name = "replays"

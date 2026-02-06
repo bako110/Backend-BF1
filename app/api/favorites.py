@@ -51,7 +51,7 @@ async def delete_fav(fav_id: str, current_user=Depends(get_current_user)):
 	return {"ok": True}
 
 @router.delete("/content/{content_type}/{content_id}")
-async def delete_fav_by_content(content_id: str, content_type: str, current_user=Depends(get_current_user)):
+async def delete_fav_by_content(content_type: str, content_id: str, current_user=Depends(get_current_user)):
 	"""Supprimer un favori par contenu"""
 	deleted = await remove_favorite_by_content(str(current_user.id), content_id, content_type)
 	if not deleted:

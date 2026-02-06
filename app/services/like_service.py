@@ -2,6 +2,13 @@ from app.models.like import Like
 from app.models.user import User
 from app.models.movie import Movie
 from app.models.show import Show
+from app.models.breakingNews import BreakingNews
+from app.models.interview import Interview
+from app.models.reel import Reel
+from app.models.replay import Replay
+from app.models.trendingShow import TrendingShow
+from app.models.popularPrograms import PopularPrograms
+from app.utils.engagement import increment_like
 from app.schemas.like import LikeCreate
 from typing import List, Optional, Dict, Any
 
@@ -11,12 +18,9 @@ async def toggle_like(user_id: str, data: LikeCreate) -> Dict[str, any]:
         print(f"🔍 Toggle like - User: {user_id}, Content: {data.content_id}, Type: {data.content_type}")
         
         # Vérifier que le contenu existe
-        if data.content_type == "movie":
-            content = await Movie.get(data.content_id)
-            print(f"📽️ Film trouvé: {content.title if content else 'None'}")
-        else:
-            content = await Show.get(data.content_id)
-            print(f"📺 Émission trouvée: {content.title if content else 'None'}")
+        content = await _get_content(data.content_type, data.content_id)
+        if content:
+            print(f"✅ Contenu trouvé: {getattr(content, 'title', None) or getattr(content, 'name', None)}")
         
         if not content:
             print(f"❌ Contenu introuvable: {data.content_id}")
@@ -33,6 +37,7 @@ async def toggle_like(user_id: str, data: LikeCreate) -> Dict[str, any]:
             # Retirer le like
             print(f"💔 Retrait du like existant: {existing_like.id}")
             await existing_like.delete()
+            await increment_like(data.content_type, data.content_id, -1)
             return {"success": True, "action": "unliked", "message": "Like retiré"}
         else:
             # Ajouter le like
@@ -43,6 +48,7 @@ async def toggle_like(user_id: str, data: LikeCreate) -> Dict[str, any]:
                 content_type=data.content_type
             )
             await like.insert()
+            await increment_like(data.content_type, data.content_id, 1)
             print(f"✅ Like ajouté avec succès: {like.id}")
             return {"success": True, "action": "liked", "message": "Like ajouté", "like_id": str(like.id)}
     except Exception as e:
@@ -50,6 +56,25 @@ async def toggle_like(user_id: str, data: LikeCreate) -> Dict[str, any]:
         import traceback
         traceback.print_exc()
         raise
+
+
+CONTENT_MODELS = {
+    "movie": Movie,
+    "show": Show,
+    "breaking_news": BreakingNews,
+    "interview": Interview,
+    "reel": Reel,
+    "replay": Replay,
+    "trending_show": TrendingShow,
+    "popular_program": PopularPrograms
+}
+
+
+async def _get_content(content_type: str, content_id: str):
+    model = CONTENT_MODELS.get(content_type)
+    if not model:
+        return None
+    return await model.get(content_id)
 
 async def get_like(like_id: str) -> Optional[Like]:
     """Récupérer un like par ID"""
@@ -105,8 +130,10 @@ async def remove_like(like_id: str, user_id: str, is_admin: bool = False) -> boo
     
     if like.user_id != user_id and not is_admin:
         return False
-    
+    content_id = like.content_id
+    content_type = like.content_type
     await like.delete()
+    await increment_like(content_type, content_id, -1)
     return True
 
 async def get_all_likes(skip: int = 0, limit: int = 1000) -> List[dict]:

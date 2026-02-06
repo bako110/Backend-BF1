@@ -4,8 +4,17 @@ from datetime import datetime
 from bson import ObjectId
 
 class LikeBase(BaseModel):
-    content_id: str = Field(..., description="ID du contenu (movie ou show)")
-    content_type: Literal["movie", "show"] = Field(..., description="Type de contenu")
+    content_id: str = Field(..., description="ID du contenu")
+    content_type: Literal[
+        "movie",
+        "show",
+        "breaking_news",
+        "interview",
+        "reel",
+        "replay",
+        "trending_show",
+        "popular_program"
+    ] = Field(..., description="Type de contenu")
 
 class LikeCreate(LikeBase):
     pass

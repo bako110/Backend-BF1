@@ -8,7 +8,12 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from app.models.user import User
 from app.models.show import Show
 from app.models.movie import Movie
-from app.models.news import News
+from app.models.breakingNews import BreakingNews
+from app.models.interview import Interview
+from app.models.popularPrograms import PopularPrograms
+from app.models.reel import Reel
+from app.models.replay import Replay
+from app.models.trendingShow import TrendingShow
 from app.models.comment import Comment
 from app.models.like import Like
 from app.models.favorite import Favorite
@@ -21,8 +26,8 @@ load_dotenv()
 
 async def init_db():
     """Initialiser la connexion à la base de données"""
-    MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017/Bf1_db")
-    DATABASE_NAME = os.getenv("DATABASE_NAME", "Bf1_db")
+    MONGODB_URL = os.getenv("MONGODB_URI", "mongodb+srv://bakorobert2000:1jHcf2qX4D53KHyw@cluster0.hfr2vqx.mongodb.net/Bf1_db?retryWrites=true&w=majority&appName=Cluster0")
+    DATABASE_NAME = os.getenv("MONGODB_DBNAME", "Bf1_db")
     
     print(f"🔌 Connexion à MongoDB: {MONGODB_URL}")
     print(f"📦 Base de données: {DATABASE_NAME}\n")
@@ -31,7 +36,10 @@ async def init_db():
     
     await init_beanie(
         database=client[DATABASE_NAME],
-        document_models=[User, Show, Movie, News, Comment, Like, Favorite]
+        document_models=[
+            User, Show, Movie, BreakingNews, Comment, Like, Favorite,
+            Interview, PopularPrograms, Reel, Replay, TrendingShow
+        ]
     )
     
     print("✅ Connexion à la base de données établie\n")

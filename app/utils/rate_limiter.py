@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import asyncio
 
 class RateLimiter:
-    def __init__(self, requests_per_minute: int = 60):
+    def __init__(self, requests_per_minute: int = 1000):
         self.requests_per_minute = requests_per_minute
         self.requests = defaultdict(list)
         self.lock = asyncio.Lock()
@@ -27,12 +27,30 @@ class RateLimiter:
             return True
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, requests_per_minute: int = 60):
+    # Endpoints to exclude from rate limiting
+    EXCLUDED_PATHS = {
+        "/openapi.json",
+        "/docs",
+        "/redoc",
+        "/health",
+    }
+    # Localhost IPs are not rate limited during development
+    LOCALHOST_IPS = {"127.0.0.1", "localhost", "::1"}
+    
+    def __init__(self, app, requests_per_minute: int = 1000):
         super().__init__(app)
         self.limiter = RateLimiter(requests_per_minute)
     
     async def dispatch(self, request: Request, call_next):
-        client_ip = request.client.host
+        # Skip rate limiting for excluded paths
+        if request.url.path in self.EXCLUDED_PATHS:
+            return await call_next(request)
+        
+        client_ip = request.client.host if request.client else "unknown"
+        
+        # Skip rate limiting for localhost during development
+        if client_ip in self.LOCALHOST_IPS:
+            return await call_next(request)
         
         if not await self.limiter.is_allowed(client_ip):
             raise HTTPException(

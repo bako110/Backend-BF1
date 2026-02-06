@@ -1,21 +1,23 @@
-from pydantic import BaseModel, Field, validator, model_validator
-from typing import Optional, Dict, Any
+from pydantic import BaseModel, Field, validator
+from typing import Optional, Literal
 from datetime import datetime
 from bson import ObjectId
 
-class FavoriteBase(BaseModel):
-	show_id: Optional[str] = Field(None, description="ID de l'émission")
-	movie_id: Optional[str] = Field(None, description="ID du film")
+ContentType = Literal[
+	"movie",
+	"show",
+	"breaking_news",
+	"interview",
+	"reel",
+	"replay",
+	"trending_show",
+	"popular_program"
+]
 
-	@model_validator(mode='after')
-	def check_one_content(self):
-		show_id = self.show_id
-		movie_id = self.movie_id
-		if not show_id and not movie_id:
-			raise ValueError('Au moins show_id ou movie_id doit être fourni')
-		if show_id and movie_id:
-			raise ValueError('Seulement show_id ou movie_id peut être fourni, pas les deux')
-		return self
+
+class FavoriteBase(BaseModel):
+	content_id: str = Field(..., description="ID du contenu")
+	content_type: ContentType = Field(..., description="Type de contenu")
 
 class FavoriteCreate(FavoriteBase):
 	pass
@@ -24,7 +26,6 @@ class FavoriteOut(FavoriteBase):
 	id: str
 	user_id: str
 	content_title: Optional[str] = Field(None, description="Titre du contenu")
-	content_type: Optional[str] = Field(None, description="Type: movie ou show")
 	added_at: datetime
 
 	@validator("id", pre=True, always=True)

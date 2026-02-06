@@ -1,28 +1,46 @@
 from app.models.favorite import Favorite
 from app.models.movie import Movie
 from app.models.show import Show
+from app.models.breakingNews import BreakingNews
+from app.models.interview import Interview
+from app.models.reel import Reel
+from app.models.replay import Replay
+from app.models.trendingShow import TrendingShow
+from app.models.popularPrograms import PopularPrograms
 from app.schemas.favorite import FavoriteCreate
 from typing import List, Optional, Dict
+
+
+CONTENT_MODELS = {
+	"movie": Movie,
+	"show": Show,
+	"breaking_news": BreakingNews,
+	"interview": Interview,
+	"reel": Reel,
+	"replay": Replay,
+	"trending_show": TrendingShow,
+	"popular_program": PopularPrograms
+}
+
+
+async def _get_content(content_type: str, content_id: str):
+	model = CONTENT_MODELS.get(content_type)
+	if not model:
+		return None
+	return await model.get(content_id)
 
 async def add_favorite(user_id: str, data: FavoriteCreate) -> Optional[Dict]:
 	"""Ajouter un favori avec vérification des doublons"""
 	# Vérifier que le contenu existe
-	if data.movie_id:
-		content = await Movie.get(data.movie_id)
-		content_type = "movie"
-		content_id = data.movie_id
-	else:
-		content = await Show.get(data.show_id)
-		content_type = "show"
-		content_id = data.show_id
-	
+	content = await _get_content(data.content_type, data.content_id)
 	if not content:
 		return None
 	
 	# Vérifier si déjà en favoris
 	existing = await Favorite.find_one(
 		Favorite.user_id == user_id,
-		Favorite.movie_id == data.movie_id if data.movie_id else Favorite.show_id == data.show_id
+		Favorite.content_id == data.content_id,
+		Favorite.content_type == data.content_type
 	)
 	
 	if existing:
@@ -30,8 +48,8 @@ async def add_favorite(user_id: str, data: FavoriteCreate) -> Optional[Dict]:
 	
 	fav = Favorite(
 		user_id=user_id,
-		movie_id=data.movie_id,
-		show_id=data.show_id
+		content_id=data.content_id,
+		content_type=data.content_type
 	)
 	await fav.insert()
 	
@@ -39,7 +57,7 @@ async def add_favorite(user_id: str, data: FavoriteCreate) -> Optional[Dict]:
 	try:
 		from app.services.notification_service import send_favorite_added_notification
 		content_title = content.title if hasattr(content, 'title') else "Contenu"
-		await send_favorite_added_notification(user_id, content_title, content_type)
+		await send_favorite_added_notification(user_id, content_title, data.content_type)
 	except Exception as e:
 		print(f"⚠️ Erreur envoi notification favori: {e}")
 	
@@ -47,7 +65,7 @@ async def add_favorite(user_id: str, data: FavoriteCreate) -> Optional[Dict]:
 		"success": True,
 		"message": "Ajouté aux favoris",
 		"favorite_id": str(fav.id),
-		"content_type": content_type
+		"content_type": data.content_type
 	}
 
 async def get_favorite(fav_id: str) -> Optional[Favorite]:
@@ -60,20 +78,12 @@ async def list_favorites(user_id: str) -> List[Dict]:
 	enriched_favorites = []
 	for fav in favorites:
 		fav_dict = fav.dict()
-		
-		# Enrichir avec les infos du contenu
-		if fav.movie_id:
-			movie = await Movie.get(fav.movie_id)
-			if movie:
-				fav_dict['content_title'] = movie.title
-				fav_dict['content_type'] = 'movie'
-				fav_dict['image_url'] = movie.image_url
-		elif fav.show_id:
-			show = await Show.get(fav.show_id)
-			if show:
-				fav_dict['content_title'] = show.title
-				fav_dict['content_type'] = 'show'
-				fav_dict['image_url'] = show.image_url
+
+		content = await _get_content(fav.content_type, fav.content_id)
+		if content:
+			fav_dict['content_title'] = getattr(content, 'title', None) or getattr(content, 'name', None)
+			fav_dict['content_type'] = fav.content_type
+			fav_dict['image_url'] = getattr(content, 'image_url', None) or getattr(content, 'image', None)
 		
 		enriched_favorites.append(fav_dict)
 	
@@ -89,16 +99,11 @@ async def remove_favorite(fav_id: str, user_id: str) -> bool:
 
 async def remove_favorite_by_content(user_id: str, content_id: str, content_type: str) -> bool:
 	"""Supprimer un favori par contenu"""
-	if content_type == "movie":
-		fav = await Favorite.find_one(
-			Favorite.user_id == user_id,
-			Favorite.movie_id == content_id
-		)
-	else:
-		fav = await Favorite.find_one(
-			Favorite.user_id == user_id,
-			Favorite.show_id == content_id
-		)
+	fav = await Favorite.find_one(
+		Favorite.user_id == user_id,
+		Favorite.content_id == content_id,
+		Favorite.content_type == content_type
+	)
 	
 	if not fav:
 		return False

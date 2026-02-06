@@ -1,6 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pathlib import Path
 
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.gzip import GZipMiddleware
@@ -15,8 +16,11 @@ from app.utils.cache import cache_manager
 from app.utils.rate_limiter import RateLimitMiddleware
 
 from app.api import (
-    shows, movies, users, favorites, news, notifications, subscriptions, payments, premium, contact, comments, likes, messages
+    shows, movies, users, favorites, breakingNews, notifications, subscriptions, payments, premium,
+    contact, comments, likes, messages, interview, reel, replay, trendingShow, popularPrograms, shares
 )
+from app.api import uploads
+from app.api import subscription_plans
 
 from contextlib import asynccontextmanager
 
@@ -39,10 +43,9 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
-# Middlewares (ordre important)
-app.add_middleware(GZipMiddleware, minimum_size=1000)
+# Middlewares (ordre important - CORS doit être appliqué DERNIER pour exécuter PREMIER)
 app.add_middleware(RateLimitMiddleware, requests_per_minute=settings.RATE_LIMIT_PER_MINUTE)
-
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 setup_cors(app)
 setup_error_handlers(app)
 setup_middlewares(app)
@@ -55,7 +58,7 @@ api_v1_router.include_router(shows.router, prefix="/shows", tags=["Shows"])
 api_v1_router.include_router(movies.router, prefix="/movies", tags=["Movies"])
 api_v1_router.include_router(users.router, prefix="/users", tags=["Users"])
 api_v1_router.include_router(favorites.router, prefix="/favorites", tags=["Favorites"])
-api_v1_router.include_router(news.router, prefix="/news", tags=["News"])
+api_v1_router.include_router(breakingNews.router, prefix="/news", tags=["News"])
 api_v1_router.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
 api_v1_router.include_router(subscriptions.router, prefix="/subscriptions", tags=["Subscriptions"])
 api_v1_router.include_router(payments.router, prefix="/payments", tags=["Payments"])
@@ -64,9 +67,20 @@ api_v1_router.include_router(contact.router, prefix="/contact", tags=["Contact"]
 api_v1_router.include_router(comments.router, prefix="/comments", tags=["Comments"])
 api_v1_router.include_router(likes.router, prefix="/likes", tags=["Likes"])
 api_v1_router.include_router(messages.router, prefix="/messages", tags=["Messages"])
+api_v1_router.include_router(uploads.router, prefix="/uploads", tags=["Uploads"])
+api_v1_router.include_router(subscription_plans.router, prefix="/subscription-plans", tags=["Subscription Plans"])
+api_v1_router.include_router(interview.router, prefix="/interviews", tags=["Interviews"])
+api_v1_router.include_router(reel.router, prefix="/reels", tags=["Reels"])
+api_v1_router.include_router(replay.router, prefix="/replays", tags=["Replays"])
+api_v1_router.include_router(trendingShow.router, prefix="/trending-shows", tags=["Trending Shows"])
+api_v1_router.include_router(popularPrograms.router, prefix="/popular-programs", tags=["Popular Programs"])
+api_v1_router.include_router(shares.router, prefix="/shares", tags=["Shares"])
 
 # Monter le router API v1
 app.include_router(api_v1_router)
+
+static_dir = Path(__file__).resolve().parent.parent / "static"
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 # Route Swagger UI personnalisée
 @app.get("/docs", include_in_schema=False)

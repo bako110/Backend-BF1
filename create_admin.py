@@ -12,6 +12,7 @@ async def create_admin():
     
     # Vérifier si un admin existe déjà
     existing_admin = await User.find_one(User.is_admin == True)
+    # print(f"admin_existing":)
     if existing_admin:
         print(f"⚠️  Un administrateur existe déjà : {existing_admin.username}")
         print(f"   Email: {existing_admin.email}")
@@ -19,8 +20,8 @@ async def create_admin():
     
     # Créer l'admin par défaut
     username = "admin"
-    email = "admin@bf1.com"
-    password = "admin123"
+    email = "admin@example.com"
+    password = "password"
     
     print("🔧 Création de l'administrateur par défaut...")
     print(f"   Username: {username}")

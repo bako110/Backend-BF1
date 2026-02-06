@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.utils.auth import get_current_user, get_admin_user
-from app.schemas.comment import CommentCreate, CommentUpdate
+from app.schemas.comment import CommentCreate, CommentUpdate, CommentModerate
 from app.services.comment_service import (
     add_comment, get_comments, get_comment, update_comment, 
-    delete_comment, count_comments, get_user_comments, get_all_comments
+    delete_comment, count_comments, get_user_comments, get_all_comments,
+    moderate_comment, admin_update_comment
 )
 from typing import List
 
@@ -52,6 +53,22 @@ async def update_comment_api(comment_id: str, data: CommentUpdate, current_user=
     updated = await update_comment(comment_id, str(current_user.id), data)
     if not updated:
         raise HTTPException(status_code=404, detail="Comment not found or unauthorized")
+    return updated
+
+@router.patch("/{comment_id}/moderate")
+async def moderate_comment_api(comment_id: str, data: CommentModerate, current_user=Depends(get_admin_user)):
+    """Masquer/afficher un commentaire (admin seulement)"""
+    updated = await moderate_comment(comment_id, data.is_hidden, str(current_user.id))
+    if not updated:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return updated
+
+@router.patch("/{comment_id}/admin")
+async def admin_update_comment_api(comment_id: str, data: CommentUpdate, current_user=Depends(get_admin_user)):
+    """Mettre à jour le texte d'un commentaire (admin seulement)"""
+    updated = await admin_update_comment(comment_id, data)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Comment not found")
     return updated
 
 @router.delete("/{comment_id}")

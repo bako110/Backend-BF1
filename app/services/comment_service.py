@@ -2,6 +2,13 @@ from app.models.comment import Comment
 from app.models.user import User
 from app.models.movie import Movie
 from app.models.show import Show
+from app.models.breakingNews import BreakingNews
+from app.models.interview import Interview
+from app.models.reel import Reel
+from app.models.replay import Replay
+from app.models.trendingShow import TrendingShow
+from app.models.popularPrograms import PopularPrograms
+from app.utils.engagement import increment_comment
 from app.schemas.comment import CommentCreate, CommentUpdate
 from typing import List, Optional
 from datetime import datetime
@@ -9,10 +16,7 @@ from datetime import datetime
 async def add_comment(user_id: str, data: CommentCreate) -> Optional[Comment]:
     """Ajouter un commentaire avec validation du contenu"""
     # Vérifier que le contenu existe
-    if data.content_type == "movie":
-        content = await Movie.get(data.content_id)
-    else:
-        content = await Show.get(data.content_id)
+    content = await _get_content(data.content_type, data.content_id)
     
     if not content:
         return None
@@ -24,7 +28,27 @@ async def add_comment(user_id: str, data: CommentCreate) -> Optional[Comment]:
         text=data.text
     )
     await comment.insert()
+    await increment_comment(data.content_type, data.content_id, 1)
     return comment
+
+
+CONTENT_MODELS = {
+    "movie": Movie,
+    "show": Show,
+    "breaking_news": BreakingNews,
+    "interview": Interview,
+    "reel": Reel,
+    "replay": Replay,
+    "trending_show": TrendingShow,
+    "popular_program": PopularPrograms
+}
+
+
+async def _get_content(content_type: str, content_id: str):
+    model = CONTENT_MODELS.get(content_type)
+    if not model:
+        return None
+    return await model.get(content_id)
 
 async def get_comment(comment_id: str) -> Optional[Comment]:
     """Récupérer un commentaire par ID"""
@@ -34,7 +58,8 @@ async def get_comments(content_id: str, content_type: str, skip: int = 0, limit:
     """Récupérer les commentaires d'un contenu avec infos utilisateur"""
     comments = await Comment.find(
         Comment.content_id == content_id,
-        Comment.content_type == content_type
+        Comment.content_type == content_type,
+        Comment.is_hidden == False
     ).sort(-Comment.created_at).skip(skip).limit(limit).to_list()
     
     # Enrichir avec les infos utilisateur
@@ -64,6 +89,35 @@ async def update_comment(comment_id: str, user_id: str, data: CommentUpdate) -> 
     await comment.save()
     return comment
 
+
+async def admin_update_comment(comment_id: str, data: CommentUpdate) -> Optional[Comment]:
+    """Mettre à jour un commentaire (admin)"""
+    comment = await Comment.get(comment_id)
+    if not comment:
+        return None
+    comment.text = data.text
+    comment.updated_at = datetime.utcnow()
+    await comment.save()
+    return comment
+
+
+async def moderate_comment(comment_id: str, is_hidden: bool, admin_id: str) -> Optional[Comment]:
+    """Masquer/afficher un commentaire (admin)"""
+    comment = await Comment.get(comment_id)
+    if not comment:
+        return None
+
+    comment.is_hidden = is_hidden
+    if is_hidden:
+        comment.hidden_at = datetime.utcnow()
+        comment.hidden_by = admin_id
+    else:
+        comment.hidden_at = None
+        comment.hidden_by = None
+
+    await comment.save()
+    return comment
+
 async def delete_comment(comment_id: str, user_id: str, is_admin: bool = False) -> bool:
     """Supprimer un commentaire (auteur ou admin)"""
     comment = await Comment.get(comment_id)
@@ -72,8 +126,10 @@ async def delete_comment(comment_id: str, user_id: str, is_admin: bool = False) 
     
     if comment.user_id != user_id and not is_admin:
         return False
-    
+    content_id = comment.content_id
+    content_type = comment.content_type
     await comment.delete()
+    await increment_comment(content_type, content_id, -1)
     return True
 
 async def count_comments(content_id: str, content_type: str) -> int:
