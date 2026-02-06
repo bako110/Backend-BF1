@@ -37,12 +37,12 @@ async def init_db():
     """Initialiser la connexion à la base de données"""
     MONGODB_URL = os.getenv("MONGODB_URI", "mongodb+srv://bakorobert2000:1jHcf2qX4D53KHyw@cluster0.hfr2vqx.mongodb.net/Bf1_db?retryWrites=true&w=majority&appName=Cluster0")
     DATABASE_NAME = os.getenv("MONGODB_DBNAME", "Bf1_db")
-    
+
     print(f"🔌 Connexion à MongoDB: {MONGODB_URL[:50]}...")
     print(f"📦 Base de données: {DATABASE_NAME}\n")
-    
+
     client = AsyncIOMotorClient(MONGODB_URL)
-    
+
     await init_beanie(
         database=client[DATABASE_NAME],
         document_models=[
@@ -52,32 +52,30 @@ async def init_db():
             SubscriptionPlan, Subscription
         ]
     )
-    
-    print("✅ Connexion à la base de données établie\n")
 
+    print("✅ Connexion à la base de données établie\n")
 
 async def clear_database():
     """Nettoyer toutes les collections"""
     print("🧹 Nettoyage de la base de données...")
-    
+
     collections = [
         User, Show, Movie, BreakingNews, Comment, Like, Favorite, Share,
         Interview, PopularPrograms, Reel, Replay, TrendingShow,
         Program, LiveChannel, ProgramReminder, Notification,
         SubscriptionPlan, Subscription
     ]
-    
+
     for collection in collections:
         await collection.delete_all()
         print(f"   ✓ {collection.__name__} vidée")
-    
-    print("✅ Base de données nettoyée\n")
 
+    print("✅ Base de données nettoyée\n")
 
 async def seed_users():
     """Créer des utilisateurs de test"""
     print("👥 Création des utilisateurs...")
-    
+
     users_data = [
         {
             "username": "admin",
@@ -104,22 +102,21 @@ async def seed_users():
             "is_active": True
         }
     ]
-    
+
     users = []
     for user_data in users_data:
         user = User(**user_data)
         await user.insert()
         users.append(user)
         print(f"   ✓ {user.username} créé")
-    
+
     print(f"✅ {len(users)} utilisateurs créés\n")
     return users
-
 
 async def seed_breaking_news():
     """Créer des actualités"""
     print("📰 Création des actualités...")
-    
+
     news_data = [
         {
             "title": "Nouvelle loi sur l'éducation adoptée",
@@ -162,22 +159,21 @@ async def seed_breaking_news():
             "created_at": datetime.utcnow() - timedelta(days=2)
         }
     ]
-    
+
     news_list = []
     for news_item in news_data:
         news = BreakingNews(**news_item)
         await news.insert()
         news_list.append(news)
         print(f"   ✓ {news.title}")
-    
+
     print(f"✅ {len(news_list)} actualités créées\n")
     return news_list
-
 
 async def seed_live_channels():
     """Créer des chaînes live"""
     print("📺 Création des chaînes live...")
-    
+
     channels_data = [
         {
             "name": "BF1 TV",
@@ -194,34 +190,31 @@ async def seed_live_channels():
             "is_active": True
         }
     ]
-    
+
     channels = []
     for channel_data in channels_data:
         channel = LiveChannel(**channel_data)
         await channel.insert()
         channels.append(channel)
         print(f"   ✓ {channel.name}")
-    
+
     print(f"✅ {len(channels)} chaînes créées\n")
     return channels
-
 
 async def seed_programs(channels):
     """Créer des programmes EPG"""
     print("📅 Création des programmes EPG...")
-    
+
     if not channels:
         print("⚠️  Aucune chaîne disponible, création de programmes ignorée\n")
         return []
-    
+
     channel = channels[0]
     programs = []
-    
-    # Créer des programmes pour les 7 prochains jours
+
     for day in range(7):
         base_date = datetime.utcnow() + timedelta(days=day)
-        
-        # Programme du matin
+
         programs.append({
             "channel_id": str(channel.id),
             "title": "Journal du Matin",
@@ -233,8 +226,7 @@ async def seed_programs(channels):
             "image_url": "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=400",
             "host": "Marie Diallo"
         })
-        
-        # Programme de midi
+
         programs.append({
             "channel_id": str(channel.id),
             "title": "Le 13H",
@@ -246,8 +238,7 @@ async def seed_programs(channels):
             "image_url": "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400",
             "host": "Jean Kouassi"
         })
-        
-        # Programme du soir
+
         programs.append({
             "channel_id": str(channel.id),
             "title": "Le 20H",
@@ -259,22 +250,21 @@ async def seed_programs(channels):
             "image_url": "https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?w=400",
             "host": "Fatou Sow"
         })
-    
+
     program_list = []
     for prog_data in programs:
         program = Program(**prog_data)
         await program.insert()
         program_list.append(program)
-    
+
     print(f"   ✓ {len(program_list)} programmes créés")
     print(f"✅ Programmes EPG créés\n")
     return program_list
 
-
 async def seed_shows():
     """Créer des émissions"""
     print("🎬 Création des émissions...")
-    
+
     shows_data = [
         {
             "title": "Le Grand Débat",
@@ -285,7 +275,7 @@ async def seed_shows():
             "live_url": "https://example.com/live/grand-debat",
             "host": "Amadou Traoré",
             "duration": "01:30:00",
-            "views_count": 15420
+            "views_count": 0
         },
         {
             "title": "Culture & Vous",
@@ -296,7 +286,7 @@ async def seed_shows():
             "replay_url": "https://example.com/replay/culture-vous",
             "host": "Aïcha Bah",
             "duration": "00:45:00",
-            "views_count": 8750
+            "views_count": 0
         },
         {
             "title": "Sport Hebdo",
@@ -307,25 +297,24 @@ async def seed_shows():
             "replay_url": "https://example.com/replay/sport-hebdo",
             "host": "Moussa Diop",
             "duration": "01:00:00",
-            "views_count": 12300
+            "views_count": 0
         }
     ]
-    
+
     shows = []
     for show_data in shows_data:
         show = Show(**show_data)
         await show.insert()
         shows.append(show)
         print(f"   ✓ {show.title}")
-    
+
     print(f"✅ {len(shows)} émissions créées\n")
     return shows
-
 
 async def seed_trending_shows():
     """Créer des émissions tendances"""
     print("🔥 Création des émissions tendances...")
-    
+
     trending_data = [
         {
             "title": "Cuisine du Monde",
@@ -334,8 +323,8 @@ async def seed_trending_shows():
             "description": "Découvrez les saveurs du monde avec nos chefs",
             "host": "Chef Mamadou",
             "episodes": 24,
-            "views": 45000,
-            "rating": 4.8
+            "views": 0,
+            "rating": 0
         },
         {
             "title": "Tech & Innovation",
@@ -344,8 +333,8 @@ async def seed_trending_shows():
             "description": "Les dernières innovations technologiques",
             "host": "Sarah Tech",
             "episodes": 18,
-            "views": 38000,
-            "rating": 4.6
+            "views": 0,
+            "rating": 0
         },
         {
             "title": "Voyage & Découverte",
@@ -354,8 +343,8 @@ async def seed_trending_shows():
             "description": "Explorez les plus beaux endroits du continent",
             "host": "Ibrahim Sall",
             "episodes": 30,
-            "views": 52000,
-            "rating": 4.9
+            "views": 0,
+            "rating": 0
         },
         {
             "title": "Santé & Bien-être",
@@ -364,26 +353,25 @@ async def seed_trending_shows():
             "description": "Conseils santé et bien-être au quotidien",
             "host": "Dr. Aminata",
             "episodes": 20,
-            "views": 41000,
-            "rating": 4.7
+            "views": 0,
+            "rating": 0
         }
     ]
-    
+
     trending = []
     for trend_data in trending_data:
         trend = TrendingShow(**trend_data)
         await trend.insert()
         trending.append(trend)
         print(f"   ✓ {trend.title}")
-    
+
     print(f"✅ {len(trending)} émissions tendances créées\n")
     return trending
-
 
 async def seed_popular_programs():
     """Créer des programmes populaires"""
     print("⭐ Création des programmes populaires...")
-    
+
     programs_data = [
         {
             "title": "Les Matinales",
@@ -391,7 +379,7 @@ async def seed_popular_programs():
             "image": "https://picsum.photos/seed/popular1/800/450",
             "description": "Réveillez-vous avec l'actualité du jour",
             "episodes": 250,
-            "rating": 4.5,
+            "rating": 0,
             "category": "Actualités"
         },
         {
@@ -400,7 +388,7 @@ async def seed_popular_programs():
             "image": "https://picsum.photos/seed/popular2/800/450",
             "description": "Les meilleurs films du cinéma africain",
             "episodes": 52,
-            "rating": 4.8,
+            "rating": 0,
             "category": "Cinéma"
         },
         {
@@ -409,7 +397,7 @@ async def seed_popular_programs():
             "image": "https://picsum.photos/seed/popular3/800/450",
             "description": "Débat sur les sujets qui font l'actualité",
             "episodes": 48,
-            "rating": 4.6,
+            "rating": 0,
             "category": "Débat"
         },
         {
@@ -418,26 +406,25 @@ async def seed_popular_programs():
             "image": "https://picsum.photos/seed/popular4/800/450",
             "description": "Découvrez les artistes musicaux du moment",
             "episodes": 40,
-            "rating": 4.7,
+            "rating": 0,
             "category": "Musique"
         }
     ]
-    
+
     programs = []
     for prog_data in programs_data:
         program = PopularPrograms(**prog_data)
         await program.insert()
         programs.append(program)
         print(f"   ✓ {program.title}")
-    
+
     print(f"✅ {len(programs)} programmes populaires créés\n")
     return programs
-
 
 async def seed_replays():
     """Créer des replays"""
     print("▶️  Création des replays...")
-    
+
     replays_data = [
         {
             "title": "Journal du 20H - 05/02/2026",
@@ -446,7 +433,7 @@ async def seed_replays():
             "thumbnail": "https://picsum.photos/seed/replay1/800/450",
             "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
             "duration_minutes": 45,
-            "views": 8500,
+            "views": 0,
             "aired_at": datetime.utcnow() - timedelta(days=1),
             "program_title": "Le 20H",
             "host": "Fatou Sow"
@@ -458,7 +445,7 @@ async def seed_replays():
             "thumbnail": "https://picsum.photos/seed/replay2/800/450",
             "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
             "duration_minutes": 90,
-            "views": 12000,
+            "views": 0,
             "aired_at": datetime.utcnow() - timedelta(days=2),
             "program_title": "Le Grand Débat",
             "host": "Amadou Traoré"
@@ -470,7 +457,7 @@ async def seed_replays():
             "thumbnail": "https://picsum.photos/seed/replay3/800/450",
             "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
             "duration_minutes": 60,
-            "views": 9800,
+            "views": 0,
             "aired_at": datetime.utcnow() - timedelta(days=3),
             "program_title": "Sport Hebdo",
             "host": "Moussa Diop"
@@ -482,34 +469,33 @@ async def seed_replays():
             "thumbnail": "https://picsum.photos/seed/replay4/800/450",
             "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
             "duration_minutes": 45,
-            "views": 7200,
+            "views": 0,
             "aired_at": datetime.utcnow() - timedelta(days=4),
             "program_title": "Culture & Vous",
             "host": "Aïcha Bah"
         }
     ]
-    
+
     replays = []
     for replay_data in replays_data:
         replay = Replay(**replay_data)
         await replay.insert()
         replays.append(replay)
         print(f"   ✓ {replay.title}")
-    
+
     print(f"✅ {len(replays)} replays créés\n")
     return replays
-
 
 async def seed_movies():
     """Créer des films"""
     print("🎥 Création des films...")
-    
+
     movies_data = [
         {
             "title": "Le Destin de Koumba",
             "description": "Un drame poignant sur une jeune femme qui lutte pour ses rêves",
             "genre": ["Drame", "Romance"],
-            "duration": 135,  # 2h15 = 135 minutes
+            "duration": 135,
             "release_date": datetime(2024, 6, 15),
             "image_url": "https://picsum.photos/seed/movie1/800/450",
             "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
@@ -519,7 +505,7 @@ async def seed_movies():
             "title": "Les Gardiens de la Savane",
             "description": "Une aventure épique dans les terres sauvages d'Afrique",
             "genre": ["Aventure", "Action"],
-            "duration": 115,  # 1h55 = 115 minutes
+            "duration": 115,
             "release_date": datetime(2025, 3, 20),
             "image_url": "https://picsum.photos/seed/movie2/800/450",
             "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
@@ -529,83 +515,81 @@ async def seed_movies():
             "title": "Rires et Larmes",
             "description": "Une comédie familiale touchante et hilarante",
             "genre": ["Comédie", "Famille"],
-            "duration": 100,  # 1h40 = 100 minutes
+            "duration": 100,
             "release_date": datetime(2025, 1, 10),
             "image_url": "https://picsum.photos/seed/movie3/800/450",
             "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
             "is_premium": False
         }
     ]
-    
+
     movies = []
     for movie_data in movies_data:
         movie = Movie(**movie_data)
         await movie.insert()
         movies.append(movie)
         print(f"   ✓ {movie.title}")
-    
+
     print(f"✅ {len(movies)} films créés\n")
     return movies
-
 
 async def seed_reels():
     """Créer des reels"""
     print("📱 Création des reels...")
-    
+
     reels_data = [
         {
             "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
             "title": "Coulisses du JT",
             "username": "BF1_Official",
             "description": "Découvrez les coulisses de notre journal télévisé",
-            "likes": 1250,
-            "comments": 45,
-            "shares": 78
+            "likes": 0,
+            "comments": 0,
+            "shares": 0
         },
         {
             "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
             "title": "Moment drôle en direct",
             "username": "BF1_Bloopers",
             "description": "Les moments les plus drôles de nos émissions",
-            "likes": 2340,
-            "comments": 89,
-            "shares": 156
+            "likes": 0,
+            "comments": 0,
+            "shares": 0
         },
         {
             "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
             "title": "Interview express",
             "username": "BF1_News",
             "description": "Interview rapide avec le ministre de la culture",
-            "likes": 980,
-            "comments": 34,
-            "shares": 52
+            "likes": 0,
+            "comments": 0,
+            "shares": 0
         },
         {
             "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
             "title": "Résumé sportif",
             "username": "BF1_Sport",
             "description": "Les meilleurs moments du match d'hier",
-            "likes": 1890,
-            "comments": 67,
-            "shares": 123
+            "likes": 0,
+            "comments": 0,
+            "shares": 0
         }
     ]
-    
+
     reels = []
     for reel_data in reels_data:
         reel = Reel(**reel_data)
         await reel.insert()
         reels.append(reel)
         print(f"   ✓ {reel.title}")
-    
+
     print(f"✅ {len(reels)} reels créés\n")
     return reels
-
 
 async def seed_interviews():
     """Créer des interviews"""
     print("🎤 Création des interviews...")
-    
+
     interviews_data = [
         {
             "title": "Interview avec le Ministre de l'Éducation",
@@ -626,22 +610,21 @@ async def seed_interviews():
             "published_at": datetime.utcnow() - timedelta(days=3)
         }
     ]
-    
+
     interviews = []
     for interview_data in interviews_data:
         interview = Interview(**interview_data)
         await interview.insert()
         interviews.append(interview)
         print(f"   ✓ {interview.title}")
-    
+
     print(f"✅ {len(interviews)} interviews créées\n")
     return interviews
-
 
 async def seed_subscription_plans():
     """Créer des plans d'abonnement"""
     print("💳 Création des plans d'abonnement...")
-    
+
     plans_data = [
         {
             "code": "free",
@@ -676,38 +659,26 @@ async def seed_subscription_plans():
             "is_active": True
         }
     ]
-    
+
     plans = []
     for plan_data in plans_data:
         plan = SubscriptionPlan(**plan_data)
         await plan.insert()
         plans.append(plan)
         print(f"   ✓ {plan.name} - {plan.price_cents} {plan.currency}")
-    
+
     print(f"✅ {len(plans)} plans d'abonnement créés\n")
     return plans
-
-
-# Section engagement supprimée - à tester manuellement dans l'app
-
 
 async def main():
     """Fonction principale"""
     try:
         await init_db()
-        
-        # Demander confirmation avant de nettoyer
-        print("⚠️  ATTENTION: Cette opération va supprimer toutes les données existantes!")
-        response = input("Voulez-vous continuer? (oui/non): ")
-        
-        if response.lower() not in ['oui', 'o', 'yes', 'y']:
-            print("\n❌ Opération annulée")
-            return
-        
+
+        print("⚠️  ATTENTION: Nettoyage et recréation de toutes les données...")
         print()
         await clear_database()
-        
-        # Créer les données dans l'ordre
+
         users = await seed_users()
         news = await seed_breaking_news()
         channels = await seed_live_channels()
@@ -720,7 +691,7 @@ async def main():
         reels = await seed_reels()
         interviews = await seed_interviews()
         plans = await seed_subscription_plans()
-        
+
         print("=" * 60)
         print("✅ PEUPLEMENT TERMINÉ AVEC SUCCÈS!")
         print("=" * 60)
@@ -741,12 +712,11 @@ async def main():
         print("   • Admin: admin@bf1.com / admin123")
         print("   • User Premium: user1@bf1.com / user123")
         print("   • User Gratuit: user2@bf1.com / user123")
-        
+
     except Exception as e:
         print(f"\n❌ Erreur lors du peuplement: {e}")
         import traceback
         traceback.print_exc()
-
 
 if __name__ == "__main__":
     print("=" * 60)
