@@ -434,6 +434,7 @@ async def seed_replays():
             "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
             "duration_minutes": 45,
             "views": 0,
+            "rating": 4.5,
             "aired_at": datetime.utcnow() - timedelta(days=1),
             "program_title": "Le 20H",
             "host": "Fatou Sow"
@@ -446,6 +447,7 @@ async def seed_replays():
             "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
             "duration_minutes": 90,
             "views": 0,
+            "rating": 4.7,
             "aired_at": datetime.utcnow() - timedelta(days=2),
             "program_title": "Le Grand Débat",
             "host": "Amadou Traoré"
@@ -458,6 +460,7 @@ async def seed_replays():
             "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
             "duration_minutes": 60,
             "views": 0,
+            "rating": 4.3,
             "aired_at": datetime.utcnow() - timedelta(days=3),
             "program_title": "Sport Hebdo",
             "host": "Moussa Diop"
@@ -470,6 +473,7 @@ async def seed_replays():
             "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
             "duration_minutes": 45,
             "views": 0,
+            "rating": 4.6,
             "aired_at": datetime.utcnow() - timedelta(days=4),
             "program_title": "Culture & Vous",
             "host": "Aïcha Bah"

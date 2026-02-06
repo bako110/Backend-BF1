@@ -17,4 +17,4 @@ class PopularPrograms(Document):
     updated_at: Optional[datetime] = Field(None, description="Date de mise à jour")
 
     class Settings:
-        name = "programs"
+        name = "popular_programs"
