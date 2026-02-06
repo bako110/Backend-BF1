@@ -18,6 +18,8 @@ from app.models.reel import Reel
 from app.models.replay import Replay
 from app.models.trendingShow import TrendingShow
 from app.models.share import Share
+from app.models.program import Program, LiveChannel, ProgramReminder
+from app.models import enums
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -30,6 +32,7 @@ async def init_db():
         database=client[db_name],
         document_models=[
             Movie, User, Show, Favorite, Like, Comment, BreakingNews, Notification,
-            Subscription, SubscriptionPlan, Message, Interview, PopularPrograms, Reel, Replay, TrendingShow, Share
+            Subscription, SubscriptionPlan, Message, Interview, PopularPrograms, Reel, Replay, TrendingShow, Share,
+            Program, LiveChannel, ProgramReminder
         ]
     )
