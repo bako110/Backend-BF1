@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, validator
 from datetime import datetime
 from typing import Optional, List
+from bson import ObjectId
 
 
 # ==================== LIVE CHANNEL SCHEMAS ====================
@@ -92,6 +93,12 @@ class ProgramOut(ProgramBase):
     duration_minutes: Optional[int] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
+
+    @validator("id", pre=True, always=True)
+    def str_id(cls, v):
+        if isinstance(v, ObjectId):
+            return str(v)
+        return v
 
     class Config:
         populate_by_name = True

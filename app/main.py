@@ -18,7 +18,7 @@ from app.utils.rate_limiter import RateLimitMiddleware
 from app.api import (
     shows, movies, users, favorites, breakingNews, notifications, subscriptions, payments, premium,
     contact, comments, likes, messages, interview, reel, replay, trendingShow, popularPrograms, shares,
-    programs
+    programs, stats
 )
 from app.api import uploads
 from app.api import subscription_plans
@@ -77,6 +77,7 @@ api_v1_router.include_router(trendingShow.router, prefix="/trending-shows", tags
 api_v1_router.include_router(popularPrograms.router, prefix="/popular-programs", tags=["Popular Programs"])
 api_v1_router.include_router(programs.router, prefix="/programs", tags=["Programs"])
 api_v1_router.include_router(shares.router, prefix="/shares", tags=["Shares"])
+api_v1_router.include_router(stats.router, prefix="/stats", tags=["Statistics"])
 
 # Monter le router API v1
 app.include_router(api_v1_router)
