@@ -11,6 +11,9 @@ class SubscriptionBase(BaseModel):
 	payment_method: Optional[str] = Field(None, max_length=50, description="Méthode de paiement")
 	transaction_id: Optional[str] = Field(None, max_length=100, description="ID transaction")
 	offer: Optional[str] = Field(None, max_length=50, description="Offre")
+	is_in_country: Optional[bool] = Field(None, description="Utilisateur au Burkina Faso")
+	price_multiplier: Optional[float] = Field(1.0, description="Multiplicateur de prix appliqué")
+	final_price: Optional[int] = Field(None, description="Prix final payé en FCFA")
 
 class SubscriptionCreate(SubscriptionBase):
 	pass

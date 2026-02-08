@@ -11,6 +11,9 @@ class Subscription(Document):
     payment_method: Optional[str] = Field(None, description="Moyen de paiement")
     transaction_id: Optional[str] = Field(None, description="ID de transaction")
     offer: Optional[str] = Field(None, description="Type d'offre ou promotion")
+    is_in_country: Optional[bool] = Field(None, description="Utilisateur au Burkina Faso lors de la souscription")
+    price_multiplier: Optional[float] = Field(1.0, description="Multiplicateur de prix appliqué (1 = Burkina, 3 = International)")
+    final_price: Optional[int] = Field(None, description="Prix final payé en FCFA")
 
     class Settings:
         name = "subscriptions"
