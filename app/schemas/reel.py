@@ -7,7 +7,6 @@ from bson import ObjectId
 class ReelBase(BaseModel):
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
     title: str = Field(..., min_length=1, max_length=200, description="Titre de la vidéo")
-    username: str = Field(..., min_length=1, max_length=120, description="Nom de l'utilisateur / créateur")
     description: str = Field(..., min_length=1, max_length=5000, description="Description de la vidéo")
 
     likes: int = Field(default=0, ge=0, description="Nombre de likes")
@@ -28,7 +27,6 @@ class ReelCreate(ReelBase):
 class ReelUpdate(BaseModel):
     video_url: Optional[HttpUrl] = None
     title: Optional[str] = Field(None, min_length=1, max_length=200)
-    username: Optional[str] = Field(None, min_length=1, max_length=120)
     description: Optional[str] = Field(None, min_length=1, max_length=5000)
 
     likes: Optional[int] = Field(None, ge=0)

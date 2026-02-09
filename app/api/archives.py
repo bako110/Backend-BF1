@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Query, Request
+from fastapi import APIRouter, HTTPException, Depends, Query, Request, status
 from typing import List, Optional
 from datetime import datetime
 
@@ -12,7 +12,7 @@ from app.utils.auth import get_current_user, get_admin_user
 router = APIRouter()
 
 
-@router.get("/", response_model=List[ArchiveOut])
+@router.get("/")
 async def get_archives(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
@@ -35,7 +35,32 @@ async def get_archives(
         [(sort_field, sort_direction)]
     ).skip(skip).limit(limit).to_list()
     
-    return archives
+    # Convertir les ObjectId en string manuellement
+    return [
+        {
+            "id": str(archive.id),
+            "title": archive.title,
+            "description": archive.description,
+            "category": archive.category,
+            "thumbnail": archive.thumbnail,
+            "video_url": archive.video_url,
+            "duration_minutes": archive.duration_minutes,
+            "price": archive.price,
+            "guest_name": archive.guest_name,
+            "guest_role": archive.guest_role,
+            "archived_date": archive.archived_date,
+            "is_premium": archive.is_premium,
+            "is_active": archive.is_active,
+            "views": archive.views,
+            "rating": archive.rating,
+            "rating_count": archive.rating_count,
+            "purchases_count": archive.purchases_count,
+            "popularity_score": archive.popularity_score,
+            "created_at": archive.created_at,
+            "updated_at": archive.updated_at
+        }
+        for archive in archives
+    ]
 
 
 @router.get("/{archive_id}", response_model=ArchiveOut)
@@ -70,7 +95,7 @@ async def get_archive(
     return archive
 
 
-@router.post("/", response_model=ArchiveOut)
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_archive(
     archive: ArchiveCreate,
     current_user: User = Depends(get_admin_user)
@@ -78,10 +103,33 @@ async def create_archive(
     """Créer une nouvelle archive (admin uniquement)"""
     new_archive = Archive(**archive.model_dump())
     await new_archive.insert()
-    return new_archive
+    
+    # Convertir l'ObjectId en string manuellement
+    return {
+        "id": str(new_archive.id),
+        "title": new_archive.title,
+        "description": new_archive.description,
+        "category": new_archive.category,
+        "thumbnail": new_archive.thumbnail,
+        "video_url": new_archive.video_url,
+        "duration_minutes": new_archive.duration_minutes,
+        "price": new_archive.price,
+        "guest_name": new_archive.guest_name,
+        "guest_role": new_archive.guest_role,
+        "archived_date": new_archive.archived_date,
+        "is_premium": new_archive.is_premium,
+        "is_active": new_archive.is_active,
+        "views": new_archive.views,
+        "rating": new_archive.rating,
+        "rating_count": new_archive.rating_count,
+        "purchases_count": new_archive.purchases_count,
+        "popularity_score": new_archive.popularity_score,
+        "created_at": new_archive.created_at,
+        "updated_at": new_archive.updated_at
+    }
 
 
-@router.patch("/{archive_id}", response_model=ArchiveOut)
+@router.patch("/{archive_id}")
 async def update_archive(
     archive_id: str,
     archive_update: ArchiveUpdate,
@@ -99,7 +147,29 @@ async def update_archive(
             setattr(archive, key, value)
         await archive.save()
     
-    return archive
+    # Convertir l'ObjectId en string manuellement
+    return {
+        "id": str(archive.id),
+        "title": archive.title,
+        "description": archive.description,
+        "category": archive.category,
+        "thumbnail": archive.thumbnail,
+        "video_url": archive.video_url,
+        "duration_minutes": archive.duration_minutes,
+        "price": archive.price,
+        "guest_name": archive.guest_name,
+        "guest_role": archive.guest_role,
+        "archived_date": archive.archived_date,
+        "is_premium": archive.is_premium,
+        "is_active": archive.is_active,
+        "views": archive.views,
+        "rating": archive.rating,
+        "rating_count": archive.rating_count,
+        "purchases_count": archive.purchases_count,
+        "popularity_score": archive.popularity_score,
+        "created_at": archive.created_at,
+        "updated_at": archive.updated_at
+    }
 
 
 @router.delete("/{archive_id}")

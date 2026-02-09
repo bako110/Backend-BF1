@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import asyncio
 
 class RateLimiter:
-    def __init__(self, requests_per_minute: int = 1000):
+    def __init__(self, requests_per_minute: int = 5000):
         self.requests_per_minute = requests_per_minute
         self.requests = defaultdict(list)
         self.lock = asyncio.Lock()
@@ -35,9 +35,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         "/health",
     }
     # Localhost IPs are not rate limited during development
-    LOCALHOST_IPS = {"127.0.0.1", "localhost", "::1"}
+    LOCALHOST_IPS = {"127.0.0.1", "localhost", "::1", "10.10.0.8"}
     
-    def __init__(self, app, requests_per_minute: int = 1000):
+    def __init__(self, app, requests_per_minute: int = 5000):
         super().__init__(app)
         self.limiter = RateLimiter(requests_per_minute)
     

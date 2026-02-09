@@ -12,6 +12,15 @@ async def add_news(news: BreakingNewsCreate, current_user=Depends(get_admin_user
 	
 	# Notifier tous les utilisateurs de la nouvelle actualité
 	try:
+		# Notification push pour les mobiles
+		from app.services.push_notification_service import push_notification_service
+		await push_notification_service.send_flash_info_notification({
+			'title': new_news.title,
+			'description': new_news.description,
+			'_id': str(new_news.id)
+		})
+		
+		# Notification système existante
 		from app.services.notification_service import notify_all_users_new_news
 		await notify_all_users_new_news(new_news.title, str(new_news.id))
 	except Exception as e:
