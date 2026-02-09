@@ -24,6 +24,7 @@ from app.models.program import Program, LiveChannel, ProgramReminder
 from app.models.notification import Notification
 from app.models.subscription_plan import SubscriptionPlan
 from app.models.subscription import Subscription
+from app.models.archive import Archive
 import os
 from dotenv import load_dotenv
 from passlib.context import CryptContext
@@ -49,7 +50,7 @@ async def init_db():
             User, Show, Movie, BreakingNews, Comment, Like, Favorite, Share,
             Interview, PopularPrograms, Reel, Replay, TrendingShow,
             Program, LiveChannel, ProgramReminder, Notification,
-            SubscriptionPlan, Subscription
+            SubscriptionPlan, Subscription, Archive
         ]
     )
 
@@ -63,7 +64,7 @@ async def clear_database():
         User, Show, Movie, BreakingNews, Comment, Like, Favorite, Share,
         Interview, PopularPrograms, Reel, Replay, TrendingShow,
         Program, LiveChannel, ProgramReminder, Notification,
-        SubscriptionPlan, Subscription
+        SubscriptionPlan, Subscription, Archive
     ]
 
     for collection in collections:
@@ -625,6 +626,126 @@ async def seed_interviews():
     print(f"✅ {len(interviews)} interviews créées\n")
     return interviews
 
+async def seed_archives():
+    """Créer des archives vidéo premium"""
+    print("📹 Création des archives vidéo...")
+    
+    now = datetime.utcnow()
+    archives_data = [
+        {
+            "title": "Interview exclusive: Le Président face aux citoyens",
+            "guest_name": "Emmanuel Président",
+            "guest_role": "Président de la République",
+            "description": "Une interview historique où le Président répond aux questions des citoyens sur la politique économique et sociale.",
+            "duration_minutes": 65,
+            "is_premium": True,
+            "price": 3500,
+            "category": "Politique",
+            "tags": ["politique", "président", "économie"],
+            "archived_date": now - timedelta(days=45),
+            "views": 3500,
+            "rating": 4.7,
+            "rating_count": 142,
+            "purchases_count": 89,
+            "popularity_score": 1050.0 + 665.4 + 17.8,
+            "image": "https://picsum.photos/seed/archive1/800/450",
+            "thumbnail": "https://picsum.photos/seed/archive1_thumb/400/225",
+            "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+        },
+        {
+            "title": "Débat: L'avenir de l'éducation nationale",
+            "guest_name": "Sophie Éducation",
+            "guest_role": "Ministre de l'Éducation",
+            "description": "Un débat approfondi sur les réformes de l'éducation et le numérique à l'école.",
+            "duration_minutes": 52,
+            "is_premium": True,
+            "price": 3000,
+            "category": "Éducation",
+            "tags": ["éducation", "réforme", "école"],
+            "archived_date": now - timedelta(days=30),
+            "views": 2100,
+            "rating": 4.3,
+            "rating_count": 87,
+            "purchases_count": 56,
+            "popularity_score": 630.0 + 187.05 + 11.2,
+            "image": "https://picsum.photos/seed/archive2/800/450",
+            "thumbnail": "https://picsum.photos/seed/archive2_thumb/400/225",
+            "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+        },
+        {
+            "title": "Crise sanitaire: Retour sur la pandémie",
+            "guest_name": "Dr. Pierre Santé",
+            "guest_role": "Directeur Général de la Santé",
+            "description": "Analyse complète de la gestion de la crise sanitaire et perspectives pour l'avenir.",
+            "duration_minutes": 58,
+            "is_premium": True,
+            "price": 2500,
+            "category": "Santé",
+            "tags": ["santé", "covid", "pandémie"],
+            "archived_date": now - timedelta(days=20),
+            "views": 4200,
+            "rating": 4.8,
+            "rating_count": 201,
+            "purchases_count": 134,
+            "popularity_score": 1260.0 + 482.4 + 26.8,
+            "image": "https://picsum.photos/seed/archive3/800/450",
+            "thumbnail": "https://picsum.photos/seed/archive3_thumb/400/225",
+            "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+        },
+        {
+            "title": "Révolution technologique: IA et société",
+            "guest_name": "Marc Innovation",
+            "guest_role": "CEO TechCorp France",
+            "description": "Discussion sur l'intelligence artificielle et son impact sur nos vies.",
+            "duration_minutes": 48,
+            "is_premium": False,
+            "price": 0,
+            "category": "Technologie",
+            "tags": ["technologie", "IA", "innovation"],
+            "archived_date": now - timedelta(days=15),
+            "views": 5800,
+            "rating": 4.9,
+            "rating_count": 287,
+            "purchases_count": 0,
+            "popularity_score": 1740.0 + 703.15 + 0.0,
+            "image": "https://picsum.photos/seed/archive4/800/450",
+            "thumbnail": "https://picsum.photos/seed/archive4_thumb/400/225",
+            "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+        },
+        {
+            "title": "Patrimoine culturel français",
+            "guest_name": "Isabelle Culture",
+            "guest_role": "Conservatrice du Musée National",
+            "description": "Exploration du patrimoine culturel français et son importance pour notre identité.",
+            "duration_minutes": 55,
+            "is_premium": True,
+            "price": 2800,
+            "category": "Culture",
+            "tags": ["culture", "patrimoine", "histoire"],
+            "archived_date": now - timedelta(days=10),
+            "views": 1850,
+            "rating": 4.5,
+            "rating_count": 76,
+            "purchases_count": 48,
+            "popularity_score": 555.0 + 171.0 + 9.6,
+            "image": "https://picsum.photos/seed/archive5/800/450",
+            "thumbnail": "https://picsum.photos/seed/archive5_thumb/400/225",
+            "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+        },
+    ]
+    
+    archives = []
+    for archive_data in archives_data:
+        archive = Archive(**archive_data)
+        await archive.insert()
+        archives.append(archive)
+        premium = "🔒 Premium" if archive.is_premium else "🆓 Gratuit"
+        price_display = f"{int(archive.price)} XOF" if archive.price > 0 else "Gratuit"
+        print(f"   ✓ {archive.title} {premium} ({price_display})")
+    
+    print(f"✅ {len(archives)} archives créées\n")
+    return archives
+
 async def seed_subscription_plans():
     """Créer des plans d'abonnement"""
     print("💳 Création des plans d'abonnement...")
@@ -642,7 +763,7 @@ async def seed_subscription_plans():
             "code": "monthly",
             "name": "Premium Mensuel",
             "duration_months": 1,
-            "price_cents": 2500,
+            "price_cents": 250000,
             "currency": "XOF",
             "is_active": True
         },
@@ -650,7 +771,7 @@ async def seed_subscription_plans():
             "code": "quarterly",
             "name": "Premium Trimestriel",
             "duration_months": 3,
-            "price_cents": 7000,
+            "price_cents": 700000,
             "currency": "XOF",
             "is_active": True
         },
@@ -658,7 +779,7 @@ async def seed_subscription_plans():
             "code": "yearly",
             "name": "Premium Annuel",
             "duration_months": 12,
-            "price_cents": 25000,
+            "price_cents": 2500000,
             "currency": "XOF",
             "is_active": True
         }
@@ -694,6 +815,7 @@ async def main():
         movies = await seed_movies()
         reels = await seed_reels()
         interviews = await seed_interviews()
+        archives = await seed_archives()
         plans = await seed_subscription_plans()
 
         print("=" * 60)
@@ -711,6 +833,7 @@ async def main():
         print(f"   • {len(movies)} films")
         print(f"   • {len(reels)} reels")
         print(f"   • {len(interviews)} interviews")
+        print(f"   • {len(archives)} archives vidéo premium")
         print(f"   • {len(plans)} plans d'abonnement")
         print("\n🔑 Comptes de test:")
         print("   • Admin: admin@bf1.com / admin123")

@@ -23,6 +23,8 @@ from app.models.user_settings import UserSettings
 from app.models.support import SupportTicket, FAQ
 from app.models.about import AppInfo, TeamMember
 from app.models.archive import Archive
+from app.models.archive_purchase import ArchivePurchase
+from app.models.payment_method import PaymentMethod
 from app.models import enums
 from dotenv import load_dotenv
 
@@ -37,6 +39,7 @@ async def init_db():
         document_models=[
             Movie, User, Show, Favorite, Like, Comment, BreakingNews, Notification,
             Subscription, SubscriptionPlan, Message, Interview, PopularPrograms, Reel, Replay, TrendingShow, Share,
-            Program, LiveChannel, ProgramReminder, UserSettings, SupportTicket, FAQ, AppInfo, TeamMember, Archive
+            Program, LiveChannel, ProgramReminder, UserSettings, SupportTicket, FAQ, AppInfo, TeamMember, Archive,
+            ArchivePurchase, PaymentMethod
         ]
     )
