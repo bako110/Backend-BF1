@@ -5,10 +5,10 @@ import aiohttp
 import json
 
 class PushNotificationService:
-    def __init__(self):
+    def __init__(self, mobile_app_url=None):
         # Configuration pour le service de notifications push
         self.fcm_server_key = None  # Clé FCM pour Firebase (si utilisé)
-        self.mobile_app_url = "http://10.10.0.8:3000"  # URL de l'app mobile pour les tests
+        self.mobile_app_url = mobile_app_url or "http://10.10.0.8:3000"  # URL de l'app mobile pour les tests
         
     async def send_welcome_notification(self, user_id: str, username: str):
         """Envoyer une notification de bienvenue (déjà géré côté mobile)"""
