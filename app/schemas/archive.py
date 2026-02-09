@@ -46,6 +46,9 @@ class ArchiveOut(ArchiveBase):
     id: str
     views: int
     rating: float
+    rating_count: int
+    purchases_count: int
+    popularity_score: float
     is_active: bool
     created_at: datetime
     updated_at: Optional[datetime] = None

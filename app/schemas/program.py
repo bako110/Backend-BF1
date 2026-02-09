@@ -159,6 +159,12 @@ class ProgramReminderOut(ProgramReminderBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
+    @validator('id', 'user_id', 'program_id', pre=True)
+    def convert_objectid_to_str(cls, v):
+        if isinstance(v, ObjectId):
+            return str(v)
+        return v
+
     class Config:
         populate_by_name = True
         from_attributes = True

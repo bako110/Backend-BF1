@@ -59,14 +59,14 @@ async def delete_channel(channel_id: str) -> bool:
 # ==================== PROGRAM SERVICES ====================
 
 async def create_program(data: ProgramCreate) -> Program:
-    # Calculer la durée si pas fournie
-    duration = data.duration_minutes
-    if not duration and data.start_time and data.end_time:
+    # Calculer la durée à partir de start_time et end_time
+    duration = None
+    if data.start_time and data.end_time:
         delta = data.end_time - data.start_time
         duration = int(delta.total_seconds() / 60)
     
     program = Program(
-        **data.model_dump(exclude={"duration_minutes"}),
+        **data.model_dump(),
         duration_minutes=duration
     )
     await program.insert()
@@ -271,6 +271,9 @@ async def get_program_week(
     """Récupère les programmes de la semaine (7 jours)"""
     
     today = datetime.now()
+    print(f"🕐 [DEBUG] Heure actuelle serveur: {today}")
+    print(f"🕐 [DEBUG] Heure actuelle serveur ISO: {today.isoformat()}")
+    
     # Ajouter des semaines si demandé
     start_dt = today + timedelta(weeks=weeks_ahead)
     
@@ -280,6 +283,8 @@ async def get_program_week(
     
     # 7 jours après
     end_dt = start_dt + timedelta(days=7)
+    
+    print(f"📅 [DEBUG] Période recherchée: {start_dt} -> {end_dt}")
     
     # Récupérer tous les programmes
     query = Program.find(
@@ -294,17 +299,31 @@ async def get_program_week(
     
     programs = await query.sort(+Program.start_time).to_list()
     
+    print(f"📺 [DEBUG] Nombre de programmes trouvés: {len(programs)}")
+    
+    # Afficher les 3 premiers programmes avec leurs heures
+    for i, prog in enumerate(programs[:3]):
+        print(f"🔍 [DEBUG] Programme {i+1}:")
+        print(f"   - Titre: {prog.title}")
+        print(f"   - start_time (objet): {prog.start_time}")
+        print(f"   - start_time (ISO): {prog.start_time.isoformat()}")
+        print(f"   - start_time (heure): {prog.start_time.hour}:{prog.start_time.minute:02d}")
+    
     # Grouper par jour
     days = _group_programs_by_day(programs)
     
     # Extraire les types disponibles
     types_available = list(set(p.type for p in programs if p.type))
     
-    return ProgramWeekOut(
+    result = ProgramWeekOut(
         days=days,
         types_available=types_available,
         total_count=len(programs)
     )
+    
+    print(f"✅ [DEBUG] Données envoyées au frontend avec {len(days)} jours")
+    
+    return result
 
 
 async def get_currently_live() -> List[Program]:
@@ -368,14 +387,6 @@ async def create_reminder(
         reminder_time = program.start_time - timedelta(minutes=data.minutes_before)
         print(f"⏰ Heure du rappel calculée: {reminder_time}")
         
-        # Récupérer le nom de la chaîne si disponible
-        channel_name = None
-        if program.channel_id:
-            channel = await LiveChannel.get(program.channel_id)
-            if channel:
-                channel_name = channel.name
-                print(f"📺 Chaîne trouvée: {channel_name}")
-        
         reminder = ProgramReminder(
             user_id=user_id,
             program_id=data.program_id,
@@ -384,7 +395,7 @@ async def create_reminder(
             scheduled_for=reminder_time,
             program_title=program.title,
             program_start_time=program.start_time,
-            channel_name=channel_name
+            channel_name=None
         )
         print(f"💾 Insertion du rappel...")
         await reminder.insert()
@@ -411,7 +422,9 @@ async def get_user_reminders(
     
     if upcoming_only:
         now = datetime.utcnow()
-        query = query.find(GTE(ProgramReminder.scheduled_for, now))
+        # Filtrer sur program_start_time au lieu de scheduled_for
+        # pour afficher les rappels des programmes à venir même si l'heure du rappel est passée
+        query = query.find(GTE(ProgramReminder.program_start_time, now))
     
     return await query.sort(+ProgramReminder.scheduled_for).to_list()
 

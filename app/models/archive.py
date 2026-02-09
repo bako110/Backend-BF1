@@ -23,6 +23,9 @@ class Archive(Document):
     # Statistiques
     views: int = Field(default=0, description="Nombre de vues")
     rating: float = Field(default=0, ge=0, le=5, description="Note de l'archive (0 à 5)")
+    rating_count: int = Field(default=0, description="Nombre de notes reçues")
+    purchases_count: int = Field(default=0, description="Nombre d'achats individuels")
+    popularity_score: float = Field(default=0, description="Score de popularité calculé")
     
     # Catégories et tags
     category: Optional[str] = Field(None, description="Catégorie de l'archive")

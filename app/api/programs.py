@@ -136,6 +136,19 @@ async def update_program(
     return program
 
 
+@router.put("/{program_id}", response_model=ProgramOut, tags=["Programs"])
+async def update_program_put(
+    program_id: str,
+    data: ProgramUpdate,
+    current_user=Depends(get_admin_user)
+):
+    """Mettre à jour un programme - méthode PUT (admin only)"""
+    program = await program_service.update_program(program_id, data)
+    if not program:
+        raise HTTPException(status_code=404, detail="Programme non trouvé")
+    return program
+
+
 @router.delete("/{program_id}", tags=["Programs"])
 async def delete_program(
     program_id: str,
@@ -230,9 +243,16 @@ async def get_upcoming_programs(
 async def create_reminder(
     program_id: str,
     data: ProgramReminderCreate,
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_optional_user)
 ):
     """Créer un rappel pour un programme"""
+    # Vérifier si l'utilisateur est connecté
+    if not current_user:
+        raise HTTPException(
+            status_code=401, 
+            detail="Vous devez être connecté pour créer un rappel"
+        )
+    
     try:
         # Override program_id from URL
         reminder_data = ProgramReminderCreate(
@@ -261,9 +281,13 @@ async def create_reminder(
 async def get_my_reminders(
     status: Optional[str] = Query(None, description="Filtrer par statut: scheduled, sent, cancelled"),
     upcoming_only: bool = Query(False, description="Uniquement les rappels à venir"),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_optional_user)
 ):
     """Récupérer mes rappels de programmes"""
+    # Si l'utilisateur n'est pas connecté, retourner une liste vide
+    if not current_user:
+        return []
+    
     reminders = await program_service.get_user_reminders(
         user_id=str(current_user.id),
         status=status,
