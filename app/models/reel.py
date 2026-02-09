@@ -7,7 +7,6 @@ from typing import Optional
 class Reel(Document):
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
     title: str = Field(..., description="Titre de la vidéo")
-    username: str = Field(..., description="Nom de l'utilisateur / créateur")
     description: str = Field(..., description="Description de la vidéo")
 
     likes: int = Field(default=0, description="Nombre de likes")

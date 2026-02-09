@@ -11,7 +11,20 @@ router = APIRouter()
 
 @router.post("/", response_model=PopularProgramsOut)
 async def add_program(program: PopularProgramsCreate, current_user=Depends(get_admin_user)):
-	return await create_program(program)
+	new_program = await create_program(program)
+	
+	# Envoyer la notification push aux mobiles
+	try:
+		from app.services.push_notification_service import push_notification_service
+		await push_notification_service.send_popular_program_notification({
+			'title': new_program.title,
+			'description': new_program.description,
+			'_id': str(new_program.id)
+		})
+	except Exception as e:
+		print(f"⚠️ Erreur envoi notification programme populaire: {e}")
+	
+	return new_program
 
 
 @router.get("/", response_model=List[PopularProgramsOut])
