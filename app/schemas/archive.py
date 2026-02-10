@@ -5,8 +5,6 @@ from datetime import datetime
 
 class ArchiveBase(BaseModel):
     title: str
-    guest_name: str
-    guest_role: str
     image: Optional[HttpUrl] = None
     thumbnail: Optional[HttpUrl] = None
     video_url: Optional[HttpUrl] = None
@@ -26,8 +24,6 @@ class ArchiveCreate(ArchiveBase):
 
 class ArchiveUpdate(BaseModel):
     title: Optional[str] = None
-    guest_name: Optional[str] = None
-    guest_role: Optional[str] = None
     image: Optional[HttpUrl] = None
     thumbnail: Optional[HttpUrl] = None
     video_url: Optional[HttpUrl] = None

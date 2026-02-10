@@ -18,7 +18,7 @@ from app.utils.rate_limiter import RateLimitMiddleware
 from app.api import (
     shows, movies, users, favorites, breakingNews, notifications, subscriptions, payments, premium,
     contact, comments, likes, messages, interview, reel, replay, trendingShow, popularPrograms, shares,
-    programs, stats, user_settings, support, about, archives, liveStream
+    programs, stats, user_settings, support, about, archives, liveStream, upload
 )
 from app.api import websocket
 from app.api import uploads
@@ -84,6 +84,7 @@ api_v1_router.include_router(support.router, prefix="/support", tags=["Support"]
 api_v1_router.include_router(about.router, prefix="/about", tags=["About"])
 api_v1_router.include_router(archives.router, prefix="/archives", tags=["Archives"])
 api_v1_router.include_router(liveStream.router, prefix="/live-stream", tags=["Live Stream"])
+api_v1_router.include_router(upload.router, prefix="/upload", tags=["Upload"])
 
 # Monter le router WebSocket directement (sans préfixe API v1)
 app.include_router(websocket.router)

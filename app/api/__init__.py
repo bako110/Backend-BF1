@@ -29,7 +29,8 @@ from . import (
     liveStream,
     uploads,
     subscription_plans,
-    websocket
+    websocket,
+    upload
 )
 
 __all__ = [
@@ -61,5 +62,6 @@ __all__ = [
     'liveStream',
     'uploads',
     'subscription_plans',
-    'websocket'
+    'websocket',
+    'upload'
 ]

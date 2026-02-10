@@ -8,7 +8,7 @@ from app.utils.file_upload import file_upload_handler
 
 router = APIRouter()
 
-@router.post("/upload/image")
+@router.post("/image")
 async def upload_image(
     file: UploadFile = File(...),
     folder: Optional[str] = "bf1",
@@ -49,7 +49,7 @@ async def upload_image(
         print(f"❌ Erreur upload image: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/upload/video")
+@router.post("/video")
 async def upload_video(
     file: UploadFile = File(...),
     folder: Optional[str] = "bf1/videos",
@@ -90,7 +90,7 @@ async def upload_video(
         print(f"❌ Erreur upload vidéo: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/upload/from-url")
+@router.post("/from-url")
 async def upload_from_url(
     url: str,
     folder: Optional[str] = "bf1",
@@ -127,7 +127,7 @@ async def upload_from_url(
         print(f"❌ Erreur upload depuis URL: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/upload/{public_id:path}")
+@router.delete("/{public_id:path}")
 async def delete_image(public_id: str):
     """
     Supprimer une image de Cloudinary
