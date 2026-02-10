@@ -169,3 +169,44 @@ async def get_reel_shares_count(reel_id: str, current_user=Depends(get_optional_
 	"""Obtenir le nombre de partages d'un reel"""
 	count = await share_service.count_shares(reel_id, "reel")
 	return {"count": count}
+
+
+# ==================== STATS ====================
+
+@router.get("/{reel_id}/stats")
+async def get_reel_stats(reel_id: str, current_user=Depends(get_optional_user)):
+	"""Obtenir toutes les statistiques d'un reel (likes, commentaires, partages, vues)"""
+	try:
+		# Vérifier que le reel existe
+		reel = await get_reel(reel_id)
+		if not reel:
+			raise HTTPException(status_code=404, detail="Reel not found")
+		
+		# Récupérer toutes les stats en parallèle
+		likes_count = await like_service.count_likes(reel_id, "reel")
+		comments_count = await comment_service.count_comments(reel_id, "reel")
+		shares_count = await share_service.count_shares(reel_id, "reel")
+		
+		# Vérifier si l'utilisateur a liké (si connecté)
+		user_has_liked = False
+		if current_user:
+			user_has_liked = await like_service.check_user_liked(
+				user_id=str(current_user.id),
+				content_id=reel_id,
+				content_type="reel"
+			)
+		
+		# Convertir le reel en dict pour accéder aux attributs
+		reel_dict = reel.dict() if hasattr(reel, 'dict') else reel
+		
+		return {
+			"likes": likes_count,
+			"comments": comments_count,
+			"shares": shares_count,
+			"views": reel_dict.get("views", 0) if isinstance(reel_dict, dict) else getattr(reel, "views", 0),
+			"user_has_liked": user_has_liked
+		}
+	except HTTPException:
+		raise
+	except Exception as e:
+		raise HTTPException(status_code=500, detail=str(e))
