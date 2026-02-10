@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     DEFAULT_PAGE_SIZE: int = int(os.getenv("DEFAULT_PAGE_SIZE", "20"))
     MAX_PAGE_SIZE: int = int(os.getenv("MAX_PAGE_SIZE", "100"))
     
+    # Cloudinary
+    CLOUDINARY_CLOUD_NAME: str = os.getenv("CLOUDINARY_CLOUD_NAME", "")
+    CLOUDINARY_API_KEY: str = os.getenv("CLOUDINARY_API_KEY", "")
+    CLOUDINARY_API_SECRET: str = os.getenv("CLOUDINARY_API_SECRET", "")
+    
     class Config:
         case_sensitive = True
         env_file = ".env"
