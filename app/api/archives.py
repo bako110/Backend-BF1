@@ -4,10 +4,11 @@ from datetime import datetime
 
 from app.models.archive import Archive
 from app.models.archive_purchase import ArchivePurchase
+from typing import Optional
 from app.models.user import User
 from app.schemas.archive import ArchiveCreate, ArchiveUpdate, ArchiveOut
 from app.schemas.archive_purchase import ArchivePurchaseCreate, ArchivePurchaseOut
-from app.utils.auth import get_current_user, get_admin_user
+from app.utils.auth import get_current_user, get_admin_user, get_optional_user
 
 router = APIRouter()
 
@@ -66,27 +67,34 @@ async def get_archives(
 @router.get("/{archive_id}", response_model=ArchiveOut)
 async def get_archive(
     archive_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_optional_user)
 ):
-    """Récupérer une archive spécifique (nécessite authentification)"""
+    """Récupérer une archive spécifique (accessible sans authentification pour le contenu gratuit)"""
     archive = await Archive.get(archive_id)
     if not archive:
         raise HTTPException(status_code=404, detail="Archive non trouvée")
     
     # Vérifier si l'utilisateur a accès (premium ou achat individuel)
-    if archive.is_premium and not current_user.is_premium:
-        # Vérifier si l'utilisateur a acheté cette archive individuellement
-        purchase = await ArchivePurchase.find_one({
-            "user_id": str(current_user.id),
-            "archive_id": archive_id,
-            "status": "completed"
-        })
-        
-        if not purchase:
+    if archive.is_premium:
+        if not current_user:
             raise HTTPException(
-                status_code=403, 
-                detail="Abonnement premium ou achat individuel requis pour accéder à cette archive"
+                status_code=401, 
+                detail="Authentification requise pour accéder au contenu premium"
             )
+        
+        if not current_user.is_premium:
+            # Vérifier si l'utilisateur a acheté cette archive individuellement
+            purchase = await ArchivePurchase.find_one({
+                "user_id": str(current_user.id),
+                "archive_id": archive_id,
+                "status": "completed"
+            })
+            
+            if not purchase:
+                raise HTTPException(
+                    status_code=403, 
+                    detail="Abonnement premium ou achat individuel requis pour accéder à cette archive"
+                )
     
     # Incrémenter les vues
     archive.views += 1
