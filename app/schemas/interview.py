@@ -10,6 +10,7 @@ class InterviewBase(BaseModel):
     guest_role: str = Field(..., min_length=1, max_length=120, description="Rôle ou fonction de l'invité")
 
     image: Optional[HttpUrl] = Field(None, description="Image de l'interview")
+    video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
     description: str = Field(..., min_length=1, max_length=5000, description="Description ou contenu de l'interview")
 
     duration_minutes: int = Field(..., ge=1, le=600, description="Durée en minutes")
@@ -18,7 +19,7 @@ class InterviewBase(BaseModel):
 
     published_at: Optional[datetime] = Field(None, description="Date de publication")
 
-    @validator("image", pre=True)
+    @validator("image", "video_url", pre=True)
     def empty_str_to_none(cls, v):
         if v == "" or v is None:
             return None
@@ -35,6 +36,7 @@ class InterviewUpdate(BaseModel):
     guest_role: Optional[str] = Field(None, min_length=1, max_length=120)
 
     image: Optional[HttpUrl] = None
+    video_url: Optional[HttpUrl] = None
     description: Optional[str] = Field(None, min_length=1, max_length=5000)
 
     duration_minutes: Optional[int] = Field(None, ge=1, le=600)
