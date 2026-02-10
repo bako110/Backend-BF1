@@ -8,6 +8,7 @@ class TrendingShow(Document):
     title: str = Field(..., description="Titre de l'émission")
     category: str = Field(..., description="Catégorie")
     image: Optional[HttpUrl] = Field(None, description="Image de l'émission")
+    video_url: Optional[str] = Field(None, description="URL de la vidéo (YouTube ou directe)")
     description: str = Field(..., description="Description")
     host: str = Field(..., description="Animateur / présentateur")
 

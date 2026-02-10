@@ -8,6 +8,7 @@ class PopularPrograms(Document):
     title: str = Field(..., description="Titre du programme")
     schedule: str = Field(..., description="Horaire du programme")
     image: Optional[HttpUrl] = Field(None, description="Image de présentation")
+    video_url: Optional[str] = Field(None, description="URL de la vidéo (YouTube ou directe)")
     description: str = Field(..., description="Description du programme")
     episodes: int = Field(..., description="Nombre d'épisodes disponibles")
     rating: float = Field(default=0, ge=0, le=5, description="Note moyenne du programme")
