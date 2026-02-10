@@ -8,6 +8,7 @@ class PopularProgramsBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="Titre du programme")
     schedule: str = Field(..., min_length=1, max_length=120, description="Horaire du programme")
     image: Optional[HttpUrl] = Field(None, description="Image de présentation")
+    video_url: Optional[str] = Field(None, description="URL de la vidéo (YouTube ou directe)")
     description: str = Field(..., min_length=1, max_length=5000, description="Description du programme")
     episodes: int = Field(..., ge=0, le=10000, description="Nombre d'épisodes disponibles")
     rating: float = Field(default=0, ge=0, le=5, description="Note moyenne du programme")
@@ -28,6 +29,7 @@ class PopularProgramsUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     schedule: Optional[str] = Field(None, min_length=1, max_length=120)
     image: Optional[HttpUrl] = None
+    video_url: Optional[str] = None
     description: Optional[str] = Field(None, min_length=1, max_length=5000)
     episodes: Optional[int] = Field(None, ge=0, le=10000)
     rating: Optional[float] = Field(None, ge=0, le=5)
