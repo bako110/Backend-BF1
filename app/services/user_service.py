@@ -9,6 +9,35 @@ from datetime import datetime
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 async def create_user(data: UserCreate) -> User:
+	# Vérifier si l'email existe déjà
+	if data.email:
+		existing_email = await User.find_one({"email": data.email})
+		if existing_email:
+			from fastapi import HTTPException
+			raise HTTPException(
+				status_code=400,
+				detail="Cet email est déjà utilisé. Veuillez en choisir un autre."
+			)
+	
+	# Vérifier si le username existe déjà
+	existing_username = await User.find_one({"username": data.username})
+	if existing_username:
+		from fastapi import HTTPException
+		raise HTTPException(
+			status_code=400,
+			detail="Ce nom d'utilisateur est déjà pris. Veuillez en choisir un autre."
+		)
+	
+	# Vérifier si le téléphone existe déjà (si fourni)
+	if data.phone:
+		existing_phone = await User.find_one({"phone": data.phone})
+		if existing_phone:
+			from fastapi import HTTPException
+			raise HTTPException(
+				status_code=400,
+				detail="Ce numéro de téléphone est déjà utilisé."
+			)
+	
 	password = data.password[:72] if data.password else ""
 	hashed_password = pwd_context.hash(password)
 	user = User(

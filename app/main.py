@@ -12,13 +12,14 @@ from app.config.settings import settings
 from app.core.cors import setup_cors
 from app.core.error_handlers import setup_error_handlers
 from app.core.middlewares import setup_middlewares
+from app.core.error_resilience import resilience_middleware
 from app.utils.cache import cache_manager
 from app.utils.rate_limiter import RateLimitMiddleware
 
 from app.api import (
     shows, movies, users, favorites, breakingNews, notifications, subscriptions, payments, premium,
     contact, comments, likes, messages, interview, reel, replay, trendingShow, popularPrograms, shares,
-    programs, stats, user_settings, support, about, archives, liveStream, upload
+    programs, stats, user_settings, support, about, archives, liveStream, upload, views, username_generator
 )
 from app.api import websocket
 from app.api import uploads
@@ -51,6 +52,9 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 setup_cors(app)
 setup_error_handlers(app)
 setup_middlewares(app)
+
+# Middleware de résilience - empêche le serveur de planter
+app.middleware("http")(resilience_middleware)
 
 # Router principal API v1
 api_v1_router = APIRouter(prefix="/api/v1")
@@ -85,6 +89,8 @@ api_v1_router.include_router(about.router, prefix="/about", tags=["About"])
 api_v1_router.include_router(archives.router, prefix="/archives", tags=["Archives"])
 api_v1_router.include_router(liveStream.router, prefix="/live-stream", tags=["Live Stream"])
 api_v1_router.include_router(upload.router, prefix="/upload", tags=["Upload"])
+api_v1_router.include_router(views.router, prefix="/views", tags=["Views"])
+api_v1_router.include_router(username_generator.router, prefix="/username", tags=["Username Generator"])
 
 # Monter le router WebSocket directement (sans préfixe API v1)
 app.include_router(websocket.router)

@@ -12,6 +12,7 @@ class Reel(Document):
     likes: int = Field(default=0, description="Nombre de likes")
     comments: int = Field(default=0, description="Nombre de commentaires")
     shares: int = Field(default=0, description="Nombre de partages")
+    views: int = Field(default=0, description="Nombre de vues")
 
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Date de création")
     updated_at: Optional[datetime] = Field(None, description="Date de mise à jour")
