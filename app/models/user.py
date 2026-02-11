@@ -1,7 +1,8 @@
-from beanie import Document
+from beanie import Document, Indexed
 from pydantic import Field, EmailStr
 from typing import Optional, List
 from datetime import datetime
+from pymongo import IndexModel
 
 
 class User(Document):
@@ -18,9 +19,9 @@ class User(Document):
     class Settings:
         name = "users"
         indexes = [
-            "email",
-            "username",
-            "phone",
+            IndexModel([("email", 1)], unique=True, sparse=True, name="email_1_unique"),
+            IndexModel([("username", 1)], unique=True, name="username_1_unique"),
+            "phone",  # Index simple sans contrainte unique pour éviter les problèmes avec null
             "is_premium",
             "created_at"
         ]

@@ -6,12 +6,19 @@ from typing import List
 
 router = APIRouter()
 
-@router.post("/register", response_model=UserOut)
+@router.post("/register")
 async def register_user(user: UserCreate):
-    """Créer un nouveau compte utilisateur"""
+    """Créer un nouveau compte utilisateur et le connecter automatiquement"""
     if len(user.password) > 72:
         raise HTTPException(status_code=400, detail="Le mot de passe ne doit pas dépasser 72 caractères.")
-    return await create_user(user)
+    
+    # Créer l'utilisateur
+    created_user = await create_user(user)
+    
+    # Connecter automatiquement l'utilisateur après inscription
+    login_result = await login_user_service(user.username, user.password)
+    
+    return login_result
 
 @router.post("/login")
 async def login_user(data: UserLoginSchema):
