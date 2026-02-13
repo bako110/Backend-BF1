@@ -12,7 +12,7 @@ class TrendingShowBase(BaseModel):
 	description: str = Field(..., min_length=1, max_length=5000, description="Description")
 	host: str = Field(..., min_length=1, max_length=120, description="Animateur / présentateur")
 
-	episodes: int = Field(..., ge=0, le=10000, description="Nombre d'épisodes")
+	episodes: int = Field(default=1, ge=0, le=10000, description="Nombre d'épisodes")
 	views: int = Field(default=0, ge=0, description="Nombre de vues")
 	rating: float = Field(default=0, ge=0, le=5, description="Note (0 à 5)")
 

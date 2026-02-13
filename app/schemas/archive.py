@@ -18,8 +18,21 @@ class ArchiveBase(BaseModel):
     original_publish_date: Optional[datetime] = None
 
 
-class ArchiveCreate(ArchiveBase):
-    pass
+class ArchiveCreate(BaseModel):
+    title: str
+    description: str
+    category: Optional[str] = None
+    thumbnail: Optional[HttpUrl] = None
+    video_url: Optional[HttpUrl] = None
+    price: float = 0.0
+    archived_date: datetime
+    
+    @field_validator('thumbnail', 'video_url', mode='before')
+    @classmethod
+    def empty_str_to_none(cls, v):
+        if v == "" or v is None:
+            return None
+        return v
 
 
 class ArchiveUpdate(BaseModel):

@@ -20,8 +20,16 @@ class ReelBase(BaseModel):
         return v
 
 
-class ReelCreate(ReelBase):
-    pass
+class ReelCreate(BaseModel):
+    video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
+    title: str = Field(..., min_length=1, max_length=200, description="Titre de la vidéo")
+    description: str = Field(..., min_length=1, max_length=5000, description="Description de la vidéo")
+
+    @validator("video_url", pre=True)
+    def empty_str_to_none(cls, v):
+        if v == "" or v is None:
+            return None
+        return v
 
 
 class ReelUpdate(BaseModel):
