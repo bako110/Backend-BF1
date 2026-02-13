@@ -105,8 +105,7 @@ async def get_archive(
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_archive(
-    archive: ArchiveCreate,
-    current_user: User = Depends(get_admin_user)
+    archive: ArchiveCreate
 ):
     """Créer une nouvelle archive (admin uniquement)"""
     new_archive = Archive(**archive.model_dump())

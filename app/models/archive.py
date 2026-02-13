@@ -6,15 +6,15 @@ from typing import Optional
 
 class Archive(Document):
     title: str = Field(..., description="Titre de l'archive")
-    guest_name: str = Field(..., description="Nom de l'invité")
-    guest_role: str = Field(..., description="Rôle ou fonction de l'invité")
+    guest_name: Optional[str] = Field(default="Invité", description="Nom de l'invité")
+    guest_role: Optional[str] = Field(default="Invité", description="Rôle ou fonction de l'invité")
     
     image: Optional[HttpUrl] = Field(None, description="Image de l'archive")
     thumbnail: Optional[HttpUrl] = Field(None, description="Miniature de l'archive")
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
     
     description: str = Field(..., description="Description ou contenu de l'archive")
-    duration_minutes: int = Field(..., description="Durée en minutes")
+    duration_minutes: Optional[int] = Field(default=30, description="Durée en minutes")
     
     # Informations de paiement
     is_premium: bool = Field(default=True, description="Contenu premium (payant)")

@@ -7,12 +7,13 @@ from typing import Optional
 class Interview(Document):
     title: str = Field(..., description="Titre de l'interview")
     guest_name: str = Field(..., description="Nom de l'invité")
-    guest_role: str = Field(..., description="Rôle ou fonction de l'invité")
+    guest_role: Optional[str] = Field(default="Invité", description="Rôle ou fonction de l'invité")
 
     image: Optional[HttpUrl] = Field(None, description="Image de l'interview")
     description: str = Field(..., description="Description ou contenu de l'interview")
+    video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
 
-    duration_minutes: int = Field(..., description="Durée en minutes")
+    duration_minutes: Optional[int] = Field(default=30, description="Durée en minutes")
     views: int = Field(default=0, description="Nombre de vues")
     rating: float = Field(default=0, ge=0, le=5, description="Note de l'interview (0 à 5)")
 

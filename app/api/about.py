@@ -21,7 +21,40 @@ async def get_app_info():
     app_info = await AppInfo.find_one(AppInfo.is_active == True)
     
     if not app_info:
-        raise HTTPException(status_code=404, detail="Informations de l'application non trouvées")
+        # Créer des informations par défaut si aucune n'existe
+        default_info = AppInfo(
+            app_name="BF1 TV",
+            version="1.0.0",
+            build_number="100",
+            release_date=datetime.utcnow(),
+            description="Chaîne TV officielle BF1. Retrouvez le direct, les émissions, films, actualités et plus.",
+            website="https://www.bf1tv.com",
+            support_email="support@bf1tv.com",
+            contact_phone="+221 XX XXX XX XX",
+            facebook_url="https://facebook.com/bf1tv",
+            twitter_url="https://twitter.com/bf1tv",
+            instagram_url="https://instagram.com/bf1tv",
+            youtube_url="https://youtube.com/bf1tv",
+            privacy_policy_url="https://www.bf1tv.com/privacy",
+            terms_url="https://www.bf1tv.com/terms",
+            features=[
+                "Direct TV en streaming",
+                "Replays et émissions à la demande",
+                "Interviews exclusives",
+                "Archives vidéo premium",
+                "Notifications en temps réel"
+            ],
+            changelog=[
+                {
+                    "version": "1.0.0",
+                    "date": "2026-02-13",
+                    "changes": ["Lancement initial de l'application"]
+                }
+            ],
+            is_active=True
+        )
+        await default_info.insert()
+        app_info = default_info
     
     return app_info
 

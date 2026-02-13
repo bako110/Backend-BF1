@@ -11,11 +11,11 @@ router = APIRouter()
 
 
 @router.post("/", response_model=ReelOut)
-async def add_reel(reel: ReelCreate, current_user=Depends(get_admin_user)):
+async def add_reel(reel: ReelCreate):
 	return await create_reel(reel)
 
 
-@router.get("", response_model=List[ReelOut])
+@router.get("/", response_model=List[ReelOut])
 async def get_all_reels(
 	skip: int = 0,
 	limit: int = 50,

@@ -30,7 +30,8 @@ from . import (
     uploads,
     subscription_plans,
     websocket,
-    upload
+    upload,
+    categories
 )
 
 __all__ = [
@@ -63,5 +64,6 @@ __all__ = [
     'uploads',
     'subscription_plans',
     'websocket',
-    'upload'
+    'upload',
+    'categories'
 ]

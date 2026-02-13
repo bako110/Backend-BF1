@@ -26,8 +26,18 @@ class InterviewBase(BaseModel):
         return v
 
 
-class InterviewCreate(InterviewBase):
-    pass
+class InterviewCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200, description="Titre de l'interview")
+    guest_name: str = Field(..., min_length=1, max_length=120, description="Nom de l'invité")
+    description: str = Field(..., min_length=1, max_length=5000, description="Description ou contenu de l'interview")
+    image: Optional[HttpUrl] = Field(None, description="Image de l'interview")
+    video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
+
+    @validator("image", "video_url", pre=True)
+    def empty_str_to_none(cls, v):
+        if v == "" or v is None:
+            return None
+        return v
 
 
 class InterviewUpdate(BaseModel):
