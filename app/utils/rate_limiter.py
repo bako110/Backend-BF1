@@ -35,7 +35,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         "/health",
     }
     # Localhost IPs are not rate limited during development
-    LOCALHOST_IPS = {"127.0.0.1", "localhost", "::1", "10.10.0.8"}
+    LOCALHOST_IPS = {"127.0.0.1", "localhost", "::1", "10.10.0.8", "192.168.11.137"}
     
     def __init__(self, app, requests_per_minute: int = 5000):
         super().__init__(app)

@@ -117,10 +117,15 @@ async def check_user_liked(user_id: str, content_id: str, content_type: str) -> 
 
 async def count_likes(content_id: str, content_type: str) -> int:
     """Compter les likes d'un contenu"""
-    return await Like.find(
-        Like.content_id == content_id,
-        Like.content_type == content_type
-    ).count()
+    try:
+        likes = await Like.find(
+            Like.content_id == content_id,
+            Like.content_type == content_type
+        ).to_list()
+        return len(likes)
+    except Exception as e:
+        print(f"❌ Erreur count_likes: {str(e)}")
+        return 0
 
 async def remove_like(like_id: str, user_id: str, is_admin: bool = False) -> bool:
     """Supprimer un like (auteur ou admin)"""
