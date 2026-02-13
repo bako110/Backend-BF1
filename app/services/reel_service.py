@@ -15,7 +15,20 @@ async def get_reel(reel_id: str) -> Optional[Reel]:
 
 
 async def list_reels(skip: int = 0, limit: int = 50) -> List[Reel]:
-	return await Reel.find_all().sort(-Reel.created_at).skip(skip).limit(limit).to_list()
+	try:
+		reels = await Reel.find_all().sort(-Reel.created_at).skip(skip).limit(limit).to_list()
+		# Convertir les URLs en string pour éviter les problèmes de sérialisation
+		result = []
+		for reel in reels:
+			reel_dict = reel.dict()
+			reel_dict['id'] = str(reel.id)
+			reel_dict['video_url'] = str(reel.video_url) if reel.video_url else None
+			reel_dict['videoUrl'] = str(reel.video_url) if reel.video_url else None  # Ajouter camelCase pour compatibilité
+			result.append(reel_dict)
+		return result
+	except Exception as e:
+		print(f"❌ Erreur list_reels: {str(e)}")
+		return []
 
 
 async def update_reel(reel_id: str, data: ReelUpdate) -> Optional[Reel]:

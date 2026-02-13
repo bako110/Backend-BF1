@@ -30,8 +30,12 @@ async def list_likes(content_id: str, content_type: str, skip: int = 0, limit: i
 @router.get("/content/{content_type}/{content_id}/count")
 async def count_likes_api(content_id: str, content_type: str):
     """Compter les likes d'un contenu"""
-    count = await count_likes(content_id, content_type)
-    return {"count": count}
+    try:
+        count = await count_likes(content_id, content_type)
+        return {"count": count}
+    except Exception as e:
+        print(f"❌ Erreur count_likes_api: {str(e)}")
+        return {"count": 0}
 
 @router.get("/check/{content_type}/{content_id}")
 async def check_liked(content_id: str, content_type: str, current_user=Depends(get_current_user)):

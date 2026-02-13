@@ -30,7 +30,7 @@ async def _get_content(content_type: str, content_id: str):
 	return await model.get(content_id)
 
 async def add_favorite(user_id: str, data: FavoriteCreate) -> Optional[Dict]:
-	"""Ajouter un favori avec vérification des doublons"""
+	"""Toggle favori (ajouter ou retirer) - évite les doublons"""
 	# Vérifier que le contenu existe
 	content = await _get_content(data.content_type, data.content_id)
 	if not content:
@@ -44,8 +44,17 @@ async def add_favorite(user_id: str, data: FavoriteCreate) -> Optional[Dict]:
 	)
 	
 	if existing:
-		return {"success": False, "message": "Déjà en favoris"}
+		# Retirer le favori existant (toggle off)
+		print(f"💔 Retrait du favori existant: {existing.id}")
+		await existing.delete()
+		return {
+			"success": True,
+			"action": "removed",
+			"message": "Retiré des favoris"
+		}
 	
+	# Ajouter le favori (toggle on)
+	print(f"⭐ Ajout d'un nouveau favori")
 	fav = Favorite(
 		user_id=user_id,
 		content_id=data.content_id,
@@ -63,6 +72,7 @@ async def add_favorite(user_id: str, data: FavoriteCreate) -> Optional[Dict]:
 	
 	return {
 		"success": True,
+		"action": "added",
 		"message": "Ajouté aux favoris",
 		"favorite_id": str(fav.id),
 		"content_type": data.content_type

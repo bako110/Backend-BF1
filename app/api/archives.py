@@ -23,45 +23,49 @@ async def get_archives(
     order: str = Query("desc", description="Ordre: asc ou desc")
 ):
     """Récupérer toutes les archives avec filtres et tri avancés"""
-    query = {"is_active": is_active}
-    
-    if category:
-        query["category"] = category
-    
-    # Déterminer le tri
-    sort_field = sort_by
-    sort_direction = -1 if order == "desc" else 1
-    
-    archives = await Archive.find(query).sort(
-        [(sort_field, sort_direction)]
-    ).skip(skip).limit(limit).to_list()
-    
-    # Convertir les ObjectId en string manuellement
-    return [
-        {
-            "id": str(archive.id),
-            "title": archive.title,
-            "description": archive.description,
-            "category": archive.category,
-            "thumbnail": archive.thumbnail,
-            "video_url": archive.video_url,
-            "duration_minutes": archive.duration_minutes,
-            "price": archive.price,
-            "guest_name": archive.guest_name,
-            "guest_role": archive.guest_role,
-            "archived_date": archive.archived_date,
-            "is_premium": archive.is_premium,
-            "is_active": archive.is_active,
-            "views": archive.views,
-            "rating": archive.rating,
-            "rating_count": archive.rating_count,
-            "purchases_count": archive.purchases_count,
-            "popularity_score": archive.popularity_score,
-            "created_at": archive.created_at,
-            "updated_at": archive.updated_at
-        }
-        for archive in archives
-    ]
+    try:
+        query = {"is_active": is_active}
+        
+        if category:
+            query["category"] = category
+        
+        # Déterminer le tri
+        sort_field = sort_by
+        sort_direction = -1 if order == "desc" else 1
+        
+        archives = await Archive.find(query).sort(
+            [(sort_field, sort_direction)]
+        ).skip(skip).limit(limit).to_list()
+        
+        # Convertir les ObjectId en string manuellement avec gestion des valeurs None
+        return [
+            {
+                "id": str(archive.id),
+                "title": archive.title or "",
+                "description": archive.description or "",
+                "category": archive.category,
+                "thumbnail": str(archive.thumbnail) if archive.thumbnail else None,
+                "video_url": str(archive.video_url) if archive.video_url else None,
+                "duration_minutes": archive.duration_minutes or 0,
+                "price": archive.price or 0.0,
+                "guest_name": archive.guest_name or "Invité",
+                "guest_role": archive.guest_role or "Invité",
+                "archived_date": archive.archived_date,
+                "is_premium": archive.is_premium if hasattr(archive, 'is_premium') else True,
+                "is_active": archive.is_active if hasattr(archive, 'is_active') else True,
+                "views": archive.views or 0,
+                "rating": archive.rating or 0.0,
+                "rating_count": archive.rating_count or 0,
+                "purchases_count": archive.purchases_count or 0,
+                "popularity_score": archive.popularity_score or 0.0,
+                "created_at": archive.created_at,
+                "updated_at": archive.updated_at
+            }
+            for archive in archives
+        ]
+    except Exception as e:
+        print(f"❌ Erreur lors de la récupération des archives: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur serveur: {str(e)}")
 
 
 @router.get("/{archive_id}", response_model=ArchiveOut)
