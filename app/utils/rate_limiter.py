@@ -35,7 +35,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         "/health",
     }
     # Localhost IPs are not rate limited during development
-    LOCALHOST_IPS = {"127.0.0.1", "localhost", "::1", "10.10.0.8", "192.168.11.137"}
+    LOCALHOST_IPS = {"127.0.0.1", "localhost", "::1", "10.10.0.8", "192.168.11.137", "192.168.137.251", "10.32.110.49"}
+    
+    # IPs de production (Render.com, serveurs internes)
+    PRODUCTION_IPS = {"0.0.0.0", "::"}  # Render.com et autres serveurs
     
     def __init__(self, app, requests_per_minute: int = 5000):
         super().__init__(app)
@@ -50,6 +53,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         
         # Skip rate limiting for localhost during development
         if client_ip in self.LOCALHOST_IPS:
+            return await call_next(request)
+        
+        # Skip rate limiting for production IPs (Render.com, serveurs internes)
+        if client_ip in self.PRODUCTION_IPS:
             return await call_next(request)
         
         if not await self.limiter.is_allowed(client_ip):
