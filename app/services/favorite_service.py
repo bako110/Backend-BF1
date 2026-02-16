@@ -81,9 +81,26 @@ async def add_favorite(user_id: str, data: FavoriteCreate) -> Optional[Dict]:
 async def get_favorite(fav_id: str) -> Optional[Favorite]:
 	return await Favorite.get(fav_id)
 
-async def list_favorites(user_id: str) -> List[Dict]:
+async def list_favorites(user_id: str, content_type: str = None) -> List[Dict]:
 	"""Lister les favoris avec enrichissement du contenu"""
-	favorites = await Favorite.find(Favorite.user_id == user_id).to_list()
+	print(f"🔍 [Backend] list_favorites appelé - user_id: {user_id}, content_type: {content_type}")
+	
+	query = Favorite.find(Favorite.user_id == user_id)
+	
+	# Ajouter le filtrage par type de contenu
+	if content_type:
+		print(f"🔍 [Backend] Application du filtre: content_type={content_type}")
+		query = query.find(Favorite.content_type == content_type)
+	else:
+		print(f"📋 [Backend] Aucun filtre appliqué")
+	
+	favorites = await query.to_list()
+	print(f"📊 [Backend] Nombre de favoris trouvés: {len(favorites)}")
+	
+	if content_type:
+		print(f"✅ [Backend] Filtrage {content_type} appliqué avec succès")
+	else:
+		print(f"📋 [Backend] Tous les favoris retournés")
 	
 	enriched_favorites = []
 	for fav in favorites:

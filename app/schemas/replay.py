@@ -13,6 +13,7 @@ class ReplayBase(BaseModel):
     duration_minutes: int = Field(..., ge=1, le=600, description="Durée en minutes")
     program_title: Optional[str] = Field(None, min_length=1, max_length=200, description="Émission d'origine")
     host: Optional[str] = Field(None, min_length=1, max_length=120, description="Animateur / présentateur")
+    allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
     aired_at: datetime = Field(..., description="Date de diffusion originale")
 
     @validator("video_url", "thumbnail", pre=True)
@@ -35,6 +36,7 @@ class ReplayUpdate(BaseModel):
     duration_minutes: Optional[int] = Field(None, ge=1, le=600)
     program_title: Optional[str] = Field(None, min_length=1, max_length=200)
     host: Optional[str] = Field(None, min_length=1, max_length=120)
+    allow_comments: Optional[bool] = None
     aired_at: Optional[datetime] = None
 
 

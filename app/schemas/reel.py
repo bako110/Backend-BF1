@@ -8,6 +8,7 @@ class ReelBase(BaseModel):
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
     title: str = Field(..., min_length=1, max_length=200, description="Titre de la vidéo")
     description: str = Field(..., min_length=1, max_length=5000, description="Description de la vidéo")
+    allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
     likes: int = Field(default=0, ge=0, description="Nombre de likes")
     comments: int = Field(default=0, ge=0, description="Nombre de commentaires")
@@ -24,6 +25,7 @@ class ReelCreate(BaseModel):
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
     title: str = Field(..., min_length=1, max_length=200, description="Titre de la vidéo")
     description: str = Field(..., min_length=1, max_length=5000, description="Description de la vidéo")
+    allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
     @validator("video_url", pre=True)
     def empty_str_to_none(cls, v):
@@ -36,6 +38,7 @@ class ReelUpdate(BaseModel):
     video_url: Optional[HttpUrl] = None
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = Field(None, min_length=1, max_length=5000)
+    allow_comments: Optional[bool] = None
 
     likes: Optional[int] = Field(None, ge=0)
     comments: Optional[int] = Field(None, ge=0)

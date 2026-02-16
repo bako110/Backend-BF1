@@ -12,6 +12,7 @@ class InterviewBase(BaseModel):
     image: Optional[HttpUrl] = Field(None, description="Image de l'interview")
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
     description: str = Field(..., min_length=1, max_length=5000, description="Description ou contenu de l'interview")
+    allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
     duration_minutes: int = Field(..., ge=1, le=600, description="Durée en minutes")
     views: int = Field(default=0, ge=0, description="Nombre de vues")
@@ -48,6 +49,7 @@ class InterviewUpdate(BaseModel):
     image: Optional[HttpUrl] = None
     video_url: Optional[HttpUrl] = None
     description: Optional[str] = Field(None, min_length=1, max_length=5000)
+    allow_comments: Optional[bool] = None
 
     duration_minutes: Optional[int] = Field(None, ge=1, le=600)
     views: Optional[int] = Field(None, ge=0)

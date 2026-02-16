@@ -4,66 +4,72 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 import asyncio
 
+# ======================
+# Rate Limiter performant
+# ======================
 class RateLimiter:
-    def __init__(self, requests_per_minute: int = 5000):
+    def __init__(self, requests_per_minute: int = 100000):
         self.requests_per_minute = requests_per_minute
-        self.requests = defaultdict(list)
+        self.clients = defaultdict(lambda: {"count": 0, "reset": datetime.utcnow()})
         self.lock = asyncio.Lock()
     
     async def is_allowed(self, identifier: str) -> bool:
         async with self.lock:
             now = datetime.utcnow()
-            cutoff = now - timedelta(minutes=1)
-            
-            self.requests[identifier] = [
-                req_time for req_time in self.requests[identifier]
-                if req_time > cutoff
-            ]
-            
-            if len(self.requests[identifier]) >= self.requests_per_minute:
+            client = self.clients[identifier]
+
+            # Reset du compteur chaque minute
+            if now >= client["reset"]:
+                client["count"] = 0
+                client["reset"] = now + timedelta(minutes=1)
+
+            if client["count"] >= self.requests_per_minute:
                 return False
-            
-            self.requests[identifier].append(now)
+
+            client["count"] += 1
             return True
 
+# ======================
+# Middleware FastAPI
+# ======================
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    # Endpoints to exclude from rate limiting
+    # Endpoints à exclure du rate limit
     EXCLUDED_PATHS = {
         "/openapi.json",
         "/docs",
         "/redoc",
         "/health",
     }
-    # Localhost IPs are not rate limited during development
-    LOCALHOST_IPS = {"127.0.0.1", "localhost", "::1", "10.10.0.8", "192.168.11.137", "192.168.137.251", "10.32.110.49"}
-    
-    # IPs de production (Render.com, serveurs internes)
-    PRODUCTION_IPS = {"0.0.0.0", "::"}  # Render.com et autres serveurs
-    
-    def __init__(self, app, requests_per_minute: int = 5000):
+
+    # Localhost IPs → dev
+    LOCALHOST_IPS = {"127.0.0.1", "localhost", "::1"}
+
+    # Production IPs → Render ou serveurs internes
+    # Laisse vide pour appliquer le rate limit à toutes les IP externes
+    PRODUCTION_IPS = set()
+
+    def __init__(self, app, requests_per_minute: int = 100000):
         super().__init__(app)
         self.limiter = RateLimiter(requests_per_minute)
-    
+
     async def dispatch(self, request: Request, call_next):
-        # Skip rate limiting for excluded paths
+        # Ignore les chemins exclus
         if request.url.path in self.EXCLUDED_PATHS:
             return await call_next(request)
-        
+
         client_ip = request.client.host if request.client else "unknown"
-        
-        # Skip rate limiting for localhost during development
+
+        # Dev : ignore localhost
         if client_ip in self.LOCALHOST_IPS:
             return await call_next(request)
-        
-        # Skip rate limiting for production IPs (Render.com, serveurs internes)
-        if client_ip in self.PRODUCTION_IPS:
-            return await call_next(request)
-        
+
+        # Prod : applique le rate limit pour toutes les IP externes
         if not await self.limiter.is_allowed(client_ip):
             raise HTTPException(
                 status_code=429,
-                detail="Too many requests. Please try again later."
+                detail=f"Too many requests from {client_ip}. Please try again later."
             )
-        
+
         response = await call_next(request)
         return response
+
