@@ -12,6 +12,7 @@ class Interview(Document):
     image: Optional[HttpUrl] = Field(None, description="Image de l'interview")
     description: str = Field(..., description="Description ou contenu de l'interview")
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
+    allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
     duration_minutes: Optional[int] = Field(default=30, description="Durée en minutes")
     views: int = Field(default=0, description="Nombre de vues")

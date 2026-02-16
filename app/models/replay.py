@@ -16,6 +16,7 @@ class Replay(Document):
 
     program_title: Optional[str] = Field(None, description="Émission d'origine")
     host: Optional[str] = Field(None, description="Animateur / présentateur")
+    allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
     views: int = Field(default=0, description="Nombre de vues")
     rating: float = Field(default=0, ge=0, le=5, description="Note du replay (0 à 5)")

@@ -11,6 +11,7 @@ class TrendingShowBase(BaseModel):
 	video_url: Optional[str] = Field(None, description="URL de la vidéo (YouTube ou directe)")
 	description: str = Field(..., min_length=1, max_length=5000, description="Description")
 	host: str = Field(..., min_length=1, max_length=120, description="Animateur / présentateur")
+	allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
 	episodes: int = Field(default=1, ge=0, le=10000, description="Nombre d'épisodes")
 	views: int = Field(default=0, ge=0, description="Nombre de vues")
@@ -34,6 +35,7 @@ class TrendingShowUpdate(BaseModel):
 	video_url: Optional[str] = None
 	description: Optional[str] = Field(None, min_length=1, max_length=5000)
 	host: Optional[str] = Field(None, min_length=1, max_length=120)
+	allow_comments: Optional[bool] = None
 
 	episodes: Optional[int] = Field(None, ge=0, le=10000)
 	views: Optional[int] = Field(None, ge=0)

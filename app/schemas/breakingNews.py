@@ -10,6 +10,7 @@ class BreakingNewsBase(BaseModel):
     description: str = Field(..., min_length=1, max_length=5000, description="Contenu de l'actualité")
     image: Optional[HttpUrl] = Field(None, description="URL de l'image")
     author: str = Field(..., min_length=1, max_length=120, description="Auteur de l'article")
+    allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
     @validator("image", pre=True)
     def empty_str_to_none(cls, v):
@@ -28,6 +29,7 @@ class BreakingNewsUpdate(BaseModel):
     description: Optional[str] = Field(None, min_length=1, max_length=5000)
     image: Optional[HttpUrl] = None
     author: Optional[str] = Field(None, min_length=1, max_length=120)
+    allow_comments: Optional[bool] = None
 
 
 class BreakingNewsOut(BreakingNewsBase):

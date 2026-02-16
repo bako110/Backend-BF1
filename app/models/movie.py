@@ -12,6 +12,7 @@ class Movie(Document):
     image_url: Optional[str] = Field(None, description="URL de l'affiche")
     is_premium: bool = Field(False, description="Film premium ?")
     video_url: Optional[str] = Field(None, description="URL de streaming")
+    allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
     # Les commentaires et likes sont gérés dans des collections séparées (Comment, Like)
     republished: bool = Field(False, description="Film republié ?")
     republished_at: Optional[datetime] = Field(None, description="Date de republication")

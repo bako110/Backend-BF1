@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from app.utils.auth import get_current_user, get_admin_user
 from app.schemas.favorite import FavoriteCreate
 from app.services.favorite_service import (
@@ -25,9 +25,15 @@ async def add_fav(fav: FavoriteCreate, current_user=Depends(get_current_user)):
 	return result
 
 @router.get("/me")
-async def get_my_favorites(current_user=Depends(get_current_user)):
+async def get_my_favorites(
+	current_user=Depends(get_current_user), 
+	content_type: str = None
+):
 	"""Récupérer mes favoris avec enrichissement du contenu"""
-	return await list_favorites(str(current_user.id))
+	print(f"🔍 [API] get_my_favorites appelé - user_id: {current_user.id}, content_type: {content_type}")
+	result = await list_favorites(str(current_user.id), content_type)
+	print(f"📤 [API] Résultat retourné: {len(result)} éléments")
+	return result
 
 @router.get("/user/{user_id}")
 async def get_user_favs(user_id: str, current_user=Depends(get_current_user)):

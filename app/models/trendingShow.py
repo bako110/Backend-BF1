@@ -11,6 +11,7 @@ class TrendingShow(Document):
     video_url: Optional[str] = Field(None, description="URL de la vidéo (YouTube ou directe)")
     description: str = Field(..., description="Description")
     host: str = Field(..., description="Animateur / présentateur")
+    allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
     episodes: int = Field(..., description="Nombre d'épisodes")
     views: int = Field(default=0, description="Nombre de vues")

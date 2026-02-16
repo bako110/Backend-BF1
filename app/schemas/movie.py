@@ -12,6 +12,7 @@ class MovieBase(BaseModel):
     image_url: Optional[str] = Field(None, description="URL de l'affiche")
     is_premium: bool = Field(False, description="Film premium")
     video_url: Optional[str] = Field(None, description="URL de streaming")
+    allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
 class MovieCreate(MovieBase):
     pass
@@ -25,6 +26,7 @@ class MovieUpdate(BaseModel):
     image_url: Optional[str] = None
     is_premium: Optional[bool] = None
     video_url: Optional[str] = None
+    allow_comments: Optional[bool] = None
 
 class MovieOut(MovieBase):
     id: str
