@@ -1,12 +1,15 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pathlib import Path
+from contextlib import asynccontextmanager
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
+
 from app.config import init_db
 from app.config.settings import settings
 from app.core.cors import setup_cors
@@ -14,19 +17,15 @@ from app.core.error_handlers import setup_error_handlers
 from app.core.middlewares import setup_middlewares
 from app.core.error_resilience import resilience_middleware
 from app.utils.cache import cache_manager
-from app.utils.rate_limiter import RateLimitMiddleware
+# RateLimitMiddleware retiré pour accepter toutes les requêtes
+# from app.utils.rate_limiter import RateLimitMiddleware
 
 from app.api import (
     shows, movies, users, favorites, breakingNews, notifications, subscriptions, payments, premium,
     contact, comments, likes, messages, interview, reel, replay, trendingShow, popularPrograms, shares,
     programs, stats, user_settings, support, about, archives, liveStream, upload, views, username_generator,
-    categories
+    categories, websocket, uploads, subscription_plans
 )
-from app.api import websocket
-from app.api import uploads
-from app.api import subscription_plans
-
-from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -42,13 +41,14 @@ app = FastAPI(
     version="2.0.0",
     description="API professionnelle pour l'application BF1 TV - Architecture RESTful",
     lifespan=lifespan,
-    docs_url=None,  # Désactivé pour créer une version personnalisée
+    docs_url=None,
     redoc_url="/redoc" if settings.DEBUG else None,
     openapi_url="/openapi.json"
 )
 
-# Middlewares (ordre important - CORS doit être appliqué DERNIER pour exécuter PREMIER)
-app.add_middleware(RateLimitMiddleware, requests_per_minute=settings.RATE_LIMIT_PER_MINUTE)
+# Middlewares
+# RateLimitMiddleware désactivé pour accepter toutes les requêtes
+# app.add_middleware(RateLimitMiddleware, requests_per_minute=settings.RATE_LIMIT_PER_MINUTE)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 setup_cors(app)
 setup_error_handlers(app)
@@ -60,7 +60,7 @@ app.middleware("http")(resilience_middleware)
 # Router principal API v1
 api_v1_router = APIRouter(prefix="/api/v1")
 
-# Inclusion des routers avec préfixes professionnels
+# Inclusion des routers
 api_v1_router.include_router(shows.router, prefix="/shows", tags=["Shows"])
 api_v1_router.include_router(movies.router, prefix="/movies", tags=["Movies"])
 api_v1_router.include_router(users.router, prefix="/users", tags=["Users"])
@@ -94,12 +94,13 @@ api_v1_router.include_router(views.router, prefix="/views", tags=["Views"])
 api_v1_router.include_router(username_generator.router, prefix="/username", tags=["Username Generator"])
 api_v1_router.include_router(categories.router, prefix="/categories", tags=["Categories"])
 
-# Monter le router WebSocket directement (sans préfixe API v1)
+# WebSocket router
 app.include_router(websocket.router)
 
 # Monter le router API v1
 app.include_router(api_v1_router)
 
+# Static files
 static_dir = Path(__file__).resolve().parent.parent / "static"
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
@@ -114,7 +115,7 @@ async def custom_swagger_ui_html():
         swagger_css_url="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css",
     )
 
-# Routes racine (hors versioning)
+# Routes racine
 @app.get("/", tags=["Root"])
 def root():
     return {
