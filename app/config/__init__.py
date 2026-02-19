@@ -12,11 +12,11 @@ from app.models.notification import Notification
 from app.models.subscription import Subscription
 from app.models.message import Message
 from app.models.subscription_plan import SubscriptionPlan
-from app.models.interview import Interview
+from app.models.divertissement import Divertissement
 from app.models.popularPrograms import PopularPrograms
 from app.models.reel import Reel
-from app.models.replay import Replay
-from app.models.trendingShow import TrendingShow
+from app.models.reportage import Reportage
+from app.models.jtandmag import JTandMag
 from app.models.share import Share
 from app.models.program import Program, LiveChannel, ProgramReminder
 from app.models.user_settings import UserSettings
@@ -27,6 +27,7 @@ from app.models.archive_purchase import ArchivePurchase
 from app.models.payment_method import PaymentMethod
 from app.models.recording import RecordingSession
 from app.models.category import Category
+from app.models.emission import Emission
 from app.api.contact import ContactMessageDoc
 from app.models import enums
 from dotenv import load_dotenv
@@ -41,8 +42,8 @@ async def init_db():
         database=client[db_name],
         document_models=[
             Movie, User, Show, Favorite, Like, Comment, BreakingNews, Notification,
-            Subscription, SubscriptionPlan, Message, Interview, PopularPrograms, Reel, Replay, TrendingShow, Share,
+            Subscription, SubscriptionPlan, Message, Divertissement, PopularPrograms, Reel, Reportage, JTandMag, Share,
             Program, LiveChannel, ProgramReminder, UserSettings, SupportTicket, FAQ, AppInfo, TeamMember, Archive,
-            ArchivePurchase, PaymentMethod, RecordingSession, Category, ContactMessageDoc
+            ArchivePurchase, PaymentMethod, RecordingSession, Category, Emission, ContactMessageDoc
         ]
     )

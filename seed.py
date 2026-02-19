@@ -11,11 +11,11 @@ from app.models.user import User
 from app.models.show import Show
 from app.models.movie import Movie
 from app.models.breakingNews import BreakingNews
-from app.models.interview import Interview
+from app.models.divertissement import Divertissement
 from app.models.popularPrograms import PopularPrograms
 from app.models.reel import Reel
-from app.models.replay import Replay
-from app.models.trendingShow import TrendingShow
+from app.models.reportage import Reportage
+from app.models.jtandmag import JTandMag
 from app.models.comment import Comment
 from app.models.like import Like
 from app.models.favorite import Favorite
@@ -48,7 +48,7 @@ async def init_db():
         database=client[DATABASE_NAME],
         document_models=[
             User, Show, Movie, BreakingNews, Comment, Like, Favorite, Share,
-            Interview, PopularPrograms, Reel, Replay, TrendingShow,
+            Divertissement, PopularPrograms, Reel, Reportage, JTandMag,
             Program, LiveChannel, ProgramReminder, Notification,
             SubscriptionPlan, Subscription, Archive
         ]
@@ -62,7 +62,7 @@ async def clear_database():
 
     collections = [
         User, Show, Movie, BreakingNews, Comment, Like, Favorite, Share,
-        Interview, PopularPrograms, Reel, Replay, TrendingShow,
+        Divertissement, PopularPrograms, Reel, Reportage, JTandMag,
         Program, LiveChannel, ProgramReminder, Notification,
         SubscriptionPlan, Subscription, Archive
     ]
@@ -361,7 +361,7 @@ async def seed_trending_shows():
 
     trending = []
     for trend_data in trending_data:
-        trend = TrendingShow(**trend_data)
+        trend = JTandMag(**trend_data)
         await trend.insert()
         trending.append(trend)
         print(f"   ✓ {trend.title}")
@@ -422,11 +422,11 @@ async def seed_popular_programs():
     print(f"✅ {len(programs)} programmes populaires créés\n")
     return programs
 
-async def seed_replays():
-    """Créer des replays"""
-    print("▶️  Création des replays...")
+async def seed_reportages():
+    """Créer des reportages"""
+    print("📹 Création des reportages...")
 
-    replays_data = [
+    reportages_data = [
         {
             "title": "Journal du 20H - 05/02/2026",
             "description": "Replay du journal télévisé du soir",
@@ -481,15 +481,15 @@ async def seed_replays():
         }
     ]
 
-    replays = []
-    for replay_data in replays_data:
-        replay = Replay(**replay_data)
-        await replay.insert()
-        replays.append(replay)
-        print(f"   ✓ {replay.title}")
+    reportages = []
+    for reportage_data in reportages_data:
+        reportage = Reportage(**reportage_data)
+        await reportage.insert()
+        reportages.append(reportage)
+        print(f"   ✓ {reportage.title}")
 
-    print(f"✅ {len(replays)} replays créés\n")
-    return replays
+    print(f"✅ {len(reportages)} reportages créés\n")
+    return reportages
 
 async def seed_movies():
     """Créer des films"""

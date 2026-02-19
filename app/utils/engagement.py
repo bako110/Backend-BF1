@@ -3,10 +3,10 @@ from typing import Optional
 from app.models.movie import Movie
 from app.models.show import Show
 from app.models.breakingNews import BreakingNews
-from app.models.interview import Interview
+from app.models.divertissement import Divertissement
 from app.models.reel import Reel
-from app.models.replay import Replay
-from app.models.trendingShow import TrendingShow
+from app.models.reportage import Reportage
+from app.models.jtandmag import JTandMag
 from app.models.popularPrograms import PopularPrograms
 
 
@@ -14,10 +14,10 @@ CONTENT_MODELS = {
     "movie": Movie,
     "show": Show,
     "breaking_news": BreakingNews,
-    "interview": Interview,
+    "divertissement": Divertissement,
     "reel": Reel,
-    "replay": Replay,
-    "trending_show": TrendingShow,
+    "reportage": Reportage,
+    "jtandmag": JTandMag,
     "popular_program": PopularPrograms
 }
 

@@ -4,12 +4,12 @@ from typing import Optional
 from bson import ObjectId
 
 
-class ReplayBase(BaseModel):
-    title: str = Field(..., min_length=1, max_length=200, description="Titre du replay")
-    category: str = Field(..., min_length=1, max_length=80, description="Catégorie du replay")
+class ReportageBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200, description="Titre du reportage")
+    category: str = Field(..., min_length=1, max_length=80, description="Catégorie du reportage")
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
-    thumbnail: Optional[HttpUrl] = Field(None, description="Miniature du replay")
-    description: str = Field(..., min_length=1, max_length=5000, description="Description du replay")
+    thumbnail: Optional[HttpUrl] = Field(None, description="Miniature du reportage")
+    description: str = Field(..., min_length=1, max_length=5000, description="Description du reportage")
     duration_minutes: int = Field(..., ge=1, le=600, description="Durée en minutes")
     program_title: Optional[str] = Field(None, min_length=1, max_length=200, description="Émission d'origine")
     host: Optional[str] = Field(None, min_length=1, max_length=120, description="Animateur / présentateur")
@@ -23,11 +23,11 @@ class ReplayBase(BaseModel):
         return v
 
 
-class ReplayCreate(ReplayBase):
+class ReportageCreate(ReportageBase):
     pass
 
 
-class ReplayUpdate(BaseModel):
+class ReportageUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     category: Optional[str] = Field(None, min_length=1, max_length=80)
     video_url: Optional[HttpUrl] = None
@@ -40,10 +40,10 @@ class ReplayUpdate(BaseModel):
     aired_at: Optional[datetime] = None
 
 
-class ReplayOut(ReplayBase):
+class ReportageOut(ReportageBase):
     id: str
     views: int = Field(0, ge=0, description="Nombre de vues")
-    rating: float = Field(0, ge=0, le=5, description="Note du replay (0 à 5)")
+    rating: float = Field(0, ge=0, le=5, description="Note du reportage (0 à 5)")
     created_at: datetime
     updated_at: Optional[datetime] = None
 
