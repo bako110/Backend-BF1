@@ -7,10 +7,10 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from app.models.show import Show
-from app.models.replay import Replay
-from app.models.interview import Interview
+from app.models.reportage import Reportage
+from app.models.jtandmag import JTandMag
+from app.models.divertissement import Divertissement
 from app.models.archive import Archive
-from app.models.trendingShow import TrendingShow
 from app.models.movie import Movie
 from app.models.reel import Reel
 
@@ -18,7 +18,7 @@ router = APIRouter()
 
 class ViewRequest(BaseModel):
     content_id: str
-    content_type: str  # 'show', 'replay', 'interview', 'archive', 'trending_show', 'movie', 'reel'
+    content_type: str  # 'show', 'reportage', 'divertissement', 'archive', 'jtandmag', 'movie', 'reel'
 
 @router.post("/increment")
 async def increment_view(view_request: ViewRequest):
@@ -35,10 +35,10 @@ async def increment_view(view_request: ViewRequest):
         # Déterminer le modèle selon le type de contenu
         model_map = {
             'show': Show,
-            'replay': Replay,
-            'interview': Interview,
+            'reportage': Reportage,
+            'divertissement': Divertissement,
             'archive': Archive,
-            'trending_show': TrendingShow,
+            'jtandmag': JTandMag,
             'movie': Movie,
             'reel': Reel
         }

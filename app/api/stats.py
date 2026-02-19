@@ -6,12 +6,12 @@ from app.utils.auth import get_admin_user
 from app.models.user import User
 from app.models.show import Show
 from app.models.movie import Movie
-from app.models.replay import Replay
-from app.models.reel import Reel
-from app.models.interview import Interview
+from app.models.reportage import Reportage
+from app.models.jtandmag import JTandMag
+from app.models.divertissement import Divertissement
 from app.models.program import Program
 from app.models.breakingNews import BreakingNews
-from app.models.trendingShow import TrendingShow
+from app.models.reel import Reel
 from app.models.popularPrograms import PopularPrograms
 from app.models.comment import Comment
 from app.models.subscription import Subscription
@@ -87,12 +87,12 @@ async def get_dashboard_stats():
         safe_calculate_growth(User),
         safe_calculate_growth(Show),
         safe_calculate_growth(Movie),
-        safe_calculate_growth(Replay),
+        safe_calculate_growth(Reportage),
         safe_calculate_growth(Reel),
-        safe_calculate_growth(Interview),
+        safe_calculate_growth(Divertissement),
         safe_calculate_growth(Program),
         safe_calculate_growth(BreakingNews),
-        safe_calculate_growth(TrendingShow),
+        safe_calculate_growth(JTandMag),
         safe_calculate_growth(PopularPrograms),
         safe_calculate_growth(Subscription),
         safe_calculate_growth(Comment),
@@ -104,12 +104,12 @@ async def get_dashboard_stats():
         "users": results[0],
         "shows": results[1],
         "movies": results[2],
-        "replays": results[3],
+        "reportages": results[3],
         "reels": results[4],
-        "interviews": results[5],
+        "divertissements": results[5],
         "programs": results[6],
         "news": results[7],
-        "trendingShows": results[8],
+        "jtandmag": results[8],
         "popularPrograms": results[9],
         "subscriptions": results[10],
         "comments": results[11],

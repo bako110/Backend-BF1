@@ -22,10 +22,11 @@ from app.utils.cache import cache_manager
 
 from app.api import (
     shows, movies, users, favorites, breakingNews, notifications, subscriptions, payments, premium,
-    contact, comments, likes, messages, interview, reel, replay, trendingShow, popularPrograms, shares,
+    contact, comments, likes, messages, jtandmag, reel, reportage, divertissement, popularPrograms, shares,
     programs, stats, user_settings, support, about, archives, liveStream, upload, views, username_generator,
     categories, websocket, uploads, subscription_plans
 )
+from app.api import emissions
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -76,10 +77,10 @@ api_v1_router.include_router(likes.router, prefix="/likes", tags=["Likes"])
 api_v1_router.include_router(messages.router, prefix="/messages", tags=["Messages"])
 api_v1_router.include_router(uploads.router, prefix="/uploads", tags=["Uploads"])
 api_v1_router.include_router(subscription_plans.router, prefix="/subscription-plans", tags=["Subscription Plans"])
-api_v1_router.include_router(interview.router, prefix="/interviews", tags=["Interviews"])
+api_v1_router.include_router(jtandmag.router, prefix="/jtandmag", tags=["JT and Magazines"])
 api_v1_router.include_router(reel.router, prefix="/reels", tags=["Reels"])
-api_v1_router.include_router(replay.router, prefix="/replays", tags=["Replays"])
-api_v1_router.include_router(trendingShow.router, prefix="/trending-shows", tags=["Trending Shows"])
+api_v1_router.include_router(reportage.router, prefix="/reportage", tags=["Reportages"])
+api_v1_router.include_router(divertissement.router, prefix="/divertissement", tags=["Divertissement"])
 api_v1_router.include_router(popularPrograms.router, prefix="/popular-programs", tags=["Popular Programs"])
 api_v1_router.include_router(programs.router, prefix="/programs", tags=["Programs"])
 api_v1_router.include_router(shares.router, prefix="/shares", tags=["Shares"])
@@ -93,6 +94,7 @@ api_v1_router.include_router(upload.router, prefix="/upload", tags=["Upload"])
 api_v1_router.include_router(views.router, prefix="/views", tags=["Views"])
 api_v1_router.include_router(username_generator.router, prefix="/username", tags=["Username Generator"])
 api_v1_router.include_router(categories.router, prefix="/categories", tags=["Categories"])
+api_v1_router.include_router(emissions.router, prefix="/emissions", tags=["Emissions"])
 
 # WebSocket router
 app.include_router(websocket.router)

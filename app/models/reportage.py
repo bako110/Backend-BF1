@@ -4,14 +4,14 @@ from datetime import datetime
 from typing import Optional
 
 
-class Replay(Document):
-    title: str = Field(..., description="Titre du replay")
-    category: str = Field(..., description="Catégorie du replay")
+class Reportage(Document):
+    title: str = Field(..., description="Titre du reportage")
+    category: str = Field(..., description="Catégorie du reportage")
 
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
-    thumbnail: Optional[HttpUrl] = Field(None, description="Miniature du replay")
+    thumbnail: Optional[HttpUrl] = Field(None, description="Miniature du reportage")
 
-    description: str = Field(..., description="Description du replay")
+    description: str = Field(..., description="Description du reportage")
     duration_minutes: int = Field(..., description="Durée en minutes")
 
     program_title: Optional[str] = Field(None, description="Émission d'origine")
@@ -19,11 +19,11 @@ class Replay(Document):
     allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
     views: int = Field(default=0, description="Nombre de vues")
-    rating: float = Field(default=0, ge=0, le=5, description="Note du replay (0 à 5)")
+    rating: float = Field(default=0, ge=0, le=5, description="Note du reportage (0 à 5)")
 
     aired_at: datetime = Field(..., description="Date de diffusion originale")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Date de création")
     updated_at: Optional[datetime] = Field(None, description="Date de mise à jour")
 
     class Settings:
-        name = "replays"
+        name = "reportages"
