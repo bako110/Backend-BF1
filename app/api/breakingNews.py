@@ -32,10 +32,23 @@ async def add_news(news: BreakingNewsCreate, current_user=Depends(get_admin_user
 async def get_all_news(
 	skip: int = 0,
 	limit: int = 50,
+	search: str = None,
 	current_user=Depends(get_optional_user)
 ):
-	"""Lister les breaking news avec pagination"""
-	return await list_news(skip, limit)
+	"""Lister les breaking news avec pagination et recherche optionnelle"""
+	news_list = await list_news(skip, limit)
+	
+	# Si un terme de recherche est fourni, filtrer les résultats
+	if search:
+		search_lower = search.lower()
+		news_list = [
+			news for news in news_list
+			if search_lower in news.title.lower() or
+			   (news.description and search_lower in news.description.lower()) or
+			   (news.category and search_lower in news.category.lower())
+		]
+	
+	return news_list
 
 @router.get("/{news_id}", response_model=BreakingNewsOut)
 async def get_one_news(news_id: str, current_user=Depends(get_optional_user)):

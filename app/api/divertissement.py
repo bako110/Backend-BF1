@@ -17,10 +17,23 @@ async def add_divertissement(divertissement: DivertissementCreate, current_user=
 @router.get("/", response_model=List[DivertissementOut])
 async def get_all_divertissement(
 	skip: int = 0, 
-	limit: int = 50, 
+	limit: int = 50,
+	search: str = None,
 	current_user=Depends(get_optional_user)
 ):
-	return await list_divertissement(skip, limit)
+	divertissements = await list_divertissement(skip, limit)
+	
+	# Si un terme de recherche est fourni, filtrer les résultats
+	if search:
+		search_lower = search.lower()
+		divertissements = [
+			divert for divert in divertissements
+			if search_lower in divert.title.lower() or
+			   (divert.description and search_lower in divert.description.lower()) or
+			   (divert.host and search_lower in divert.host.lower())
+		]
+	
+	return divertissements
 
 
 @router.get("/{divertissement_id}", response_model=DivertissementOut)

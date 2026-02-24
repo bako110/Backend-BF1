@@ -15,10 +15,23 @@ async def add_reportage(reportage: ReportageCreate, current_user=Depends(get_adm
 @router.get("/", response_model=List[ReportageOut])
 async def get_all_reportages(
 	skip: int = 0, 
-	limit: int = 50, 
+	limit: int = 50,
+	search: str = None,
 	current_user=Depends(get_optional_user)
 ):
-	return await list_reportages(skip, limit)
+	reportages = await list_reportages(skip, limit)
+	
+	# Si un terme de recherche est fourni, filtrer les résultats
+	if search:
+		search_lower = search.lower()
+		reportages = [
+			reportage for reportage in reportages
+			if search_lower in reportage.title.lower() or
+			   (reportage.description and search_lower in reportage.description.lower()) or
+			   (reportage.host and search_lower in reportage.host.lower())
+		]
+	
+	return reportages
 
 
 @router.get("/{reportage_id}", response_model=ReportageOut)
