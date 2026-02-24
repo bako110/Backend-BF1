@@ -17,10 +17,24 @@ async def add_jtandmag(jtandmag: JTandMagCreate, current_user=Depends(get_admin_
 @router.get("/", response_model=List[JTandMagOut])
 async def get_all_jtandmag(
 	skip: int = 0, 
-	limit: int = 50, 
+	limit: int = 50,
+	search: str = None,
 	current_user=Depends(get_optional_user)
 ):
-	return await list_jtandmag(skip, limit)
+	jtandmags = await list_jtandmag(skip, limit)
+	
+	# Si un terme de recherche est fourni, filtrer les résultats
+	if search:
+		search_lower = search.lower()
+		jtandmags = [
+			jtm for jtm in jtandmags
+			if search_lower in jtm.title.lower() or
+			   (jtm.description and search_lower in jtm.description.lower()) or
+			   (jtm.host and search_lower in jtm.host.lower()) or
+			   (jtm.edition and search_lower in jtm.edition.lower())
+		]
+	
+	return jtandmags
 
 
 @router.get("/{jtandmag_id}", response_model=JTandMagOut)

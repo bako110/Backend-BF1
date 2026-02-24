@@ -42,9 +42,10 @@ async def get_all_shows(
 	date: str = None,
 	page: int = 1,
 	page_size: int = 20,
+	search: str = None,
 	current_user=Depends(get_optional_user)
 ):
-	cache_key = f"shows:list:{sort}:{order}:{date}:{page}:{page_size}"
+	cache_key = f"shows:list:{sort}:{order}:{date}:{page}:{page_size}:{search}"
 	cached = await cache_manager.get(cache_key)
 	if cached:
 		return cached
@@ -55,6 +56,17 @@ async def get_all_shows(
 		shows = await list_shows_by_date(date)
 	else:
 		shows = await list_shows()
+	
+	# Recherche si un terme est fourni
+	if search:
+		search_lower = search.lower()
+		shows = [
+			show for show in shows
+			if search_lower in show.title.lower() or
+			   (show.description and search_lower in show.description.lower()) or
+			   (show.host and search_lower in show.host.lower()) or
+			   (show.category and search_lower in show.category.lower())
+		]
 	
 	# Pagination
 	start = (page - 1) * page_size
