@@ -8,7 +8,7 @@ from app.models.reel import Reel
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
 from app.models.popularPrograms import PopularPrograms
-from app.models.emission import Emission
+from app.models.sport import Sport
 from app.utils.engagement import increment_like
 from app.schemas.like import LikeCreate
 from typing import List, Optional, Dict, Any
@@ -68,7 +68,7 @@ CONTENT_MODELS = {
     "reportage": Reportage,
     "jtandmag": JTandMag,
     "popular_program": PopularPrograms,
-    "emission": Emission,
+    "sport": Sport,
 }
 
 

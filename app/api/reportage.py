@@ -24,12 +24,33 @@ async def get_all_reportages(
 	# Si un terme de recherche est fourni, filtrer les résultats
 	if search:
 		search_lower = search.lower()
-		reportages = [
-			reportage for reportage in reportages
-			if search_lower in reportage.title.lower() or
-			   (reportage.description and search_lower in reportage.description.lower()) or
-			   (reportage.host and search_lower in reportage.host.lower())
-		]
+		print(f" [REPORTAGES] Recherche complète: '{search}'")
+		
+		# Obtenir tous les reportages sans pagination d'abord
+		all_reportages = await list_reportages(0, 1000)  # Grande limite pour obtenir tous
+		
+		# Recherche complète dans tous les champs
+		filtered_reportages = []
+		for reportage in all_reportages:
+			# Recherche dans tous les champs disponibles
+			title_match = search_lower in reportage.title.lower()
+			desc_match = reportage.description and search_lower in reportage.description.lower()
+			host_match = hasattr(reportage, 'host') and reportage.host and search_lower in reportage.host.lower()
+			category_match = hasattr(reportage, 'category') and reportage.category and search_lower in reportage.category.lower()
+			sub_category_match = hasattr(reportage, 'sub_category') and reportage.sub_category and search_lower in reportage.sub_category.lower()
+			theme_match = hasattr(reportage, 'theme') and reportage.theme and search_lower in reportage.theme.lower()
+			location_match = hasattr(reportage, 'location') and reportage.location and search_lower in reportage.location.lower()
+			journalist_match = hasattr(reportage, 'journalist') and reportage.journalist and search_lower in reportage.journalist.lower()
+			tags_match = hasattr(reportage, 'tags') and reportage.tags and any(search_lower in tag.lower() for tag in reportage.tags)
+			
+			if title_match or desc_match or host_match or category_match or sub_category_match or theme_match or location_match or journalist_match or tags_match:
+				filtered_reportages.append(reportage)
+				print(f" [REPORTAGES] Match trouvé: '{reportage.title}' (titre:{title_match}, desc:{desc_match}, host:{host_match}, cat:{category_match})")
+		
+		print(f" [REPORTAGES] Résultats après recherche complète: {len(filtered_reportages)}")
+		
+		# Pagination sur les résultats filtrés
+		reportages = filtered_reportages[skip:skip + limit]
 	
 	return reportages
 

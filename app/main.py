@@ -26,7 +26,7 @@ from app.api import (
     programs, stats, user_settings, support, about, archives, liveStream, upload, views, username_generator,
     categories, websocket, uploads, subscription_plans
 )
-from app.api import emissions
+from app.api import sport
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -94,7 +94,7 @@ api_v1_router.include_router(upload.router, prefix="/upload", tags=["Upload"])
 api_v1_router.include_router(views.router, prefix="/views", tags=["Views"])
 api_v1_router.include_router(username_generator.router, prefix="/username", tags=["Username Generator"])
 api_v1_router.include_router(categories.router, prefix="/categories", tags=["Categories"])
-api_v1_router.include_router(emissions.router, prefix="/emissions", tags=["Emissions"])
+api_v1_router.include_router(sport.router, prefix="/sports", tags=["Sports"])
 
 # WebSocket router
 app.include_router(websocket.router)

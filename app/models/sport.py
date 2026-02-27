@@ -4,15 +4,15 @@ from typing import Optional, List
 from datetime import datetime
 
 
-class Emission(Document):
+class Sport(Document):
     """
-    Modèle de document pour les émissions
+    Modèle de document pour les sports
     """
-    title: str = Field(..., description="Titre de l'émission")
-    description: Optional[str] = Field(None, description="Description de l'émission")
+    title: str = Field(..., description="Titre du sport")
+    description: Optional[str] = Field(None, description="Description du sport")
     
     # Catégories
-    category: str = Field(..., description="Catégorie de l'émission")
+    category: str = Field(..., description="Catégorie du sport")
     subcategory: Optional[str] = Field(None, description="Sous-catégorie")
     
     # Médias
@@ -31,16 +31,20 @@ class Emission(Document):
     
     # Tags et métadonnées
     tags: List[str] = Field(default_factory=list, description="Liste des tags")
-    featured: bool = Field(default=False, description="Émission en vedette")
-    is_new: bool = Field(default=False, description="Nouvelle émission")
-    is_active: bool = Field(default=True, description="Émission active")
+    featured: bool = Field(default=False, description="Sport en vedette")
+    is_new: bool = Field(default=False, description="Nouveau sport")
+    is_active: bool = Field(default=True, description="Sport actif")
+    
+    # Champs spécifiques aux sports
+    sport_type: Optional[str] = Field(None, description="Type de sport (Football, Basket, etc.)")
+    teams: List[str] = Field(default_factory=list, description="Liste des équipes participantes")
     
     # Timestamps
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Date de création")
     updated_at: Optional[datetime] = Field(None, description="Date de mise à jour")
 
     class Settings:
-        name = "emissions"
+        name = "sports"
         indexes = [
             "category",
             "subcategory",

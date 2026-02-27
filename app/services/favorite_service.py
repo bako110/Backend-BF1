@@ -7,7 +7,7 @@ from app.models.reel import Reel
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
 from app.models.popularPrograms import PopularPrograms
-from app.models.emission import Emission
+from app.models.sport import Sport
 from app.schemas.favorite import FavoriteCreate
 from typing import List, Optional, Dict
 
@@ -21,7 +21,7 @@ CONTENT_MODELS = {
 	"reportage": Reportage,
 	"jtandmag": JTandMag,
 	"popular_program": PopularPrograms,
-	"emission": Emission
+	"sport": Sport
 }
 
 

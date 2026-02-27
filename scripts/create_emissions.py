@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import random
 
 from app.core.database import init_db
-from app.models.emission import Emission
+from app.models.sport import Sport
 
 
 # Données de test pour les émissions

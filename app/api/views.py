@@ -13,12 +13,13 @@ from app.models.divertissement import Divertissement
 from app.models.archive import Archive
 from app.models.movie import Movie
 from app.models.reel import Reel
+from app.models.sport import Sport
 
 router = APIRouter()
 
 class ViewRequest(BaseModel):
     content_id: str
-    content_type: str  # 'show', 'reportage', 'divertissement', 'archive', 'jtandmag', 'movie', 'reel'
+    content_type: str  # 'show', 'reportage', 'divertissement', 'archive', 'jtandmag', 'movie', 'reel', 'sport'
 
 @router.post("/increment")
 async def increment_view(view_request: ViewRequest):
@@ -40,7 +41,8 @@ async def increment_view(view_request: ViewRequest):
             'archive': Archive,
             'jtandmag': JTandMag,
             'movie': Movie,
-            'reel': Reel
+            'reel': Reel,
+            'emission': Emission
         }
         
         if content_type not in model_map:

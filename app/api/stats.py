@@ -17,6 +17,7 @@ from app.models.comment import Comment
 from app.models.subscription import Subscription
 from app.models.like import Like
 from app.models.favorite import Favorite
+from app.models.sport import Sport
 
 router = APIRouter()
 
@@ -98,6 +99,7 @@ async def get_dashboard_stats():
         safe_calculate_growth(Comment),
         safe_calculate_growth(Like),
         safe_calculate_growth(Favorite),
+        safe_calculate_growth(Sport),
     )
     
     stats = {
@@ -115,6 +117,7 @@ async def get_dashboard_stats():
         "comments": results[11],
         "likes": results[12],
         "favorites": results[13],
+        "sports": results[14],
     }
     
     return stats

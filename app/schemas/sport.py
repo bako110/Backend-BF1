@@ -1,6 +1,6 @@
 """
-Schémas Pydantic pour les émissions
-Définit la validation et la sérialisation des données des émissions
+Schémas Pydantic pour les sports
+Définit la validation et la sérialisation des données des sports
 """
 
 from pydantic import BaseModel, Field, validator
@@ -11,7 +11,7 @@ from bson import ObjectId
 
 
 class CategoryEnum(str, Enum):
-    """Énumération des catégories d'émissions valides"""
+    """Énumération des catégories de sports valides"""
     toutes = "toutes"
     jt = "jt"
     magazines = "magazines"
@@ -21,11 +21,11 @@ class CategoryEnum(str, Enum):
     emission = "emission"
 
 
-class EmissionBase(BaseModel):
-    """Schéma de base pour les émissions"""
-    title: str = Field(..., min_length=1, max_length=255, description="Titre de l'émission")
-    description: Optional[str] = Field(None, max_length=2000, description="Description de l'émission")
-    category: CategoryEnum = Field(..., description="Catégorie de l'émission")
+class SportBase(BaseModel):
+    """Schéma de base pour les sports"""
+    title: str = Field(..., min_length=1, max_length=255, description="Titre du sport")
+    description: Optional[str] = Field(None, max_length=2000, description="Description du sport")
+    category: CategoryEnum = Field(..., description="Catégorie du sport")
     subcategory: Optional[str] = Field(None, max_length=50, description="Sous-catégorie")
     image: Optional[str] = Field(None, max_length=500, description="URL de l'image principale")
     thumbnail: Optional[str] = Field(None, max_length=500, description="URL de la miniature")
@@ -34,9 +34,13 @@ class EmissionBase(BaseModel):
     date: Optional[datetime] = Field(None, description="Date de diffusion")
     presenter: Optional[str] = Field(None, max_length=255, description="Présentateur")
     tags: Optional[List[str]] = Field(default=[], description="Liste des tags")
-    featured: Optional[bool] = Field(False, description="Émission en vedette")
-    is_new: Optional[bool] = Field(False, description="Nouvelle émission")
-    is_active: Optional[bool] = Field(True, description="Émission active")
+    featured: Optional[bool] = Field(False, description="Sport en vedette")
+    is_new: Optional[bool] = Field(False, description="Nouveau sport")
+    is_active: Optional[bool] = Field(True, description="Sport actif")
+    
+    # Champs spécifiques aux sports
+    sport_type: Optional[str] = Field(None, max_length=100, description="Type de sport (Football, Basket, etc.)")
+    teams: Optional[List[str]] = Field(default=[], description="Liste des équipes participantes")
 
     @validator('tags')
     def validate_tags(cls, v):
@@ -56,13 +60,13 @@ class EmissionBase(BaseModel):
         return v
 
 
-class EmissionCreate(EmissionBase):
-    """Schéma pour la création d'une émission"""
+class SportCreate(SportBase):
+    """Schéma pour la création d'un sport"""
     pass
 
 
-class EmissionUpdate(BaseModel):
-    """Schéma pour la mise à jour d'une émission"""
+class SportUpdate(BaseModel):
+    """Schéma pour la mise à jour d'un sport"""
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = Field(None, max_length=2000)
     category: Optional[CategoryEnum] = None
@@ -85,8 +89,8 @@ class EmissionUpdate(BaseModel):
         return [tag.strip() for tag in v if isinstance(tag, str) and tag.strip()]
 
 
-class EmissionResponse(EmissionBase):
-    """Schéma pour la réponse des émissions"""
+class SportResponse(SportBase):
+    """Schéma pour la réponse des sports"""
     id: str
     views: int = Field(default=0, ge=0, description="Nombre de vues")
     likes: int = Field(default=0, ge=0, description="Nombre de likes")
@@ -103,17 +107,17 @@ class EmissionResponse(EmissionBase):
         from_attributes = True
 
 
-class EmissionList(BaseModel):
-    """Schéma pour la liste des émissions"""
-    emissions: List[EmissionResponse]
-    total: int = Field(..., ge=0, description="Nombre total d'émissions")
+class SportList(BaseModel):
+    """Schéma pour la liste des sports"""
+    sports: List[SportResponse]
+    total: int = Field(..., ge=0, description="Nombre total de sports")
     page: int = Field(..., ge=1, description="Page actuelle")
     per_page: int = Field(..., ge=1, le=100, description="Éléments par page")
     total_pages: int = Field(..., ge=0, description="Nombre total de pages")
 
 
-class EmissionStats(BaseModel):
-    """Schéma pour les statistiques d'une émission"""
+class SportStats(BaseModel):
+    """Schéma pour les statistiques d'un sport"""
     id: str
     views: int
     likes: int

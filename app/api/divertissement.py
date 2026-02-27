@@ -26,12 +26,32 @@ async def get_all_divertissement(
 	# Si un terme de recherche est fourni, filtrer les résultats
 	if search:
 		search_lower = search.lower()
-		divertissements = [
-			divert for divert in divertissements
-			if search_lower in divert.title.lower() or
-			   (divert.description and search_lower in divert.description.lower()) or
-			   (divert.host and search_lower in divert.host.lower())
-		]
+		print(f"🔍 [DIVERTISSEMENTS] Recherche complète: '{search}'")
+		
+		# Obtenir tous les divertissements sans pagination d'abord
+		all_divertissements = await list_divertissement(0, 1000)  # Grande limite pour obtenir tous
+		
+		# Recherche complète dans tous les champs
+		filtered_divertissements = []
+		for divert in all_divertissements:
+			# Recherche dans tous les champs disponibles (avec vérification sécurisée)
+			title_match = search_lower in divert.title.lower()
+			desc_match = divert.description and search_lower in divert.description.lower()
+			host_match = hasattr(divert, 'host') and divert.host and search_lower in divert.host.lower()
+			category_match = hasattr(divert, 'category') and divert.category and search_lower in divert.category.lower()
+			sub_category_match = hasattr(divert, 'sub_category') and divert.sub_category and search_lower in divert.sub_category.lower()
+			duration_match = hasattr(divert, 'duration_minutes') and divert.duration_minutes and search_lower in str(divert.duration_minutes).lower()
+			rating_match = hasattr(divert, 'rating') and divert.rating and search_lower in str(divert.rating).lower()
+			tags_match = hasattr(divert, 'tags') and divert.tags and any(search_lower in tag.lower() for tag in divert.tags)
+			
+			if title_match or desc_match or host_match or category_match or sub_category_match or duration_match or rating_match or tags_match:
+				filtered_divertissements.append(divert)
+				print(f"✅ [DIVERTISSEMENTS] Match trouvé: '{divert.title}' (titre:{title_match}, desc:{desc_match}, host:{host_match}, cat:{category_match})")
+		
+		print(f"🎯 [DIVERTISSEMENTS] Résultats après recherche complète: {len(filtered_divertissements)}")
+		
+		# Pagination sur les résultats filtrés
+		divertissements = filtered_divertissements[skip:skip + limit]
 	
 	return divertissements
 
