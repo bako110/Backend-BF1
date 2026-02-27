@@ -12,7 +12,8 @@ ContentType = Literal[
 	"jtandmag",
 	"popular_program",
 	"archive",
-	"program"
+	"program",
+	"emission"
 ]
 
 

@@ -7,6 +7,7 @@ from app.models.reel import Reel
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
 from app.models.popularPrograms import PopularPrograms
+from app.models.emission import Emission
 from app.schemas.share import ShareCreate
 from typing import List, Optional
 from app.utils.engagement import increment_share
@@ -20,7 +21,8 @@ CONTENT_MODELS = {
     "reel": Reel,
     "reportage": Reportage,
     "jtandmag": JTandMag,
-    "popular_program": PopularPrograms
+    "popular_program": PopularPrograms,
+    "emission": Emission
 }
 
 
