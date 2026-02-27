@@ -15,7 +15,8 @@ class LikeBase(BaseModel):
         "jtandmag",
         "popular_program",
         "archive",
-        "program"
+        "program",
+        "emission"
     ] = Field(..., description="Type de contenu")
 
 class LikeCreate(LikeBase):
