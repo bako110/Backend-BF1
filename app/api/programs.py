@@ -92,9 +92,66 @@ async def create_program(
 @router.get("/", response_model=List[ProgramOut], tags=["Programs"])
 async def list_programs(
     params: ProgramFilterParams = Depends(),
+    search: Optional[str] = Query(None, description="Rechercher dans tous les champs"),
     current_user=Depends(get_optional_user)
 ):
-    """Lister les programmes avec filtres"""
+    """Lister les programmes avec filtres et recherche complète"""
+    
+    # Si un terme de recherche est fourni, faire une recherche complète
+    if search:
+        search_lower = search.lower()
+        print(f"🔍 [PROGRAMS] Recherche complète: '{search}'")
+        
+        # Obtenir tous les programmes sans pagination d'abord
+        all_programs = await program_service.list_programs_raw(
+            date=params.date,
+            start_date=params.start_date,
+            end_date=params.end_date,
+            type=params.type,
+            category=params.category,
+            channel_id=params.channel_id,
+            is_live=params.is_live,
+            has_replay=params.has_replay,
+            host=params.host,
+            skip=0,
+            limit=1000  # Grande limite pour obtenir tous
+        )
+        
+        # Recherche complète dans tous les champs
+        filtered_programs = []
+        for program in all_programs:
+            # Recherche dans tous les champs disponibles
+            title_match = search_lower in program.title.lower()
+            desc_match = hasattr(program, 'description') and program.description and search_lower in program.description.lower()
+            host_match = hasattr(program, 'host') and program.host and search_lower in program.host.lower()
+            category_match = hasattr(program, 'category') and program.category and search_lower in program.category.lower()
+            type_match = hasattr(program, 'type') and program.type and search_lower in program.type.lower()
+            channel_match = hasattr(program, 'channel_name') and program.channel_name and search_lower in program.channel_name.lower()
+            tags_match = hasattr(program, 'tags') and program.tags and any(search_lower in tag.lower() for tag in program.tags)
+            duration_match = hasattr(program, 'duration') and program.duration and search_lower in str(program.duration).lower()
+            
+            if title_match or desc_match or host_match or category_match or type_match or channel_match or tags_match or duration_match:
+                filtered_programs.append(program)
+                print(f"✅ [PROGRAMS] Match trouvé: '{program.title}' (titre:{title_match}, desc:{desc_match}, host:{host_match}, cat:{category_match})")
+        
+        print(f"🎯 [PROGRAMS] Résultats après recherche complète: {len(filtered_programs)}")
+        
+        # Pagination sur les résultats filtrés
+        total_filtered = len(filtered_programs)
+        start = params.skip or 0
+        end = start + (params.limit or 20)
+        paginated_programs = filtered_programs[start:end]
+        
+        # Retourner avec métadonnées de pagination
+        return {
+            "programs": paginated_programs,
+            "total": total_filtered,
+            "skip": start,
+            "limit": params.limit or 20,
+            "has_more": end < total_filtered
+        }
+    
+    # Recherche normale sans terme de recherche
     programs = await program_service.list_programs(
         date=params.date,
         start_date=params.start_date,

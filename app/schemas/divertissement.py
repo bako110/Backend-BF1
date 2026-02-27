@@ -10,6 +10,7 @@ class DivertissementBase(BaseModel):
     image: Optional[HttpUrl] = Field(None, description="Image du divertissement")
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
     description: str = Field(..., min_length=1, max_length=5000, description="Description ou contenu du divertissement")
+    host: Optional[str] = Field(None, min_length=1, max_length=120, description="Animateur / présentateur")
     allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
     duration_minutes: Optional[int] = Field(default=30, ge=1, le=600, description="Durée en minutes")
@@ -34,6 +35,7 @@ class DivertissementUpdate(BaseModel):
     image: Optional[HttpUrl] = None
     video_url: Optional[HttpUrl] = None
     description: Optional[str] = Field(None, min_length=1, max_length=5000)
+    host: Optional[str] = Field(None, min_length=1, max_length=120)
     allow_comments: Optional[bool] = None
 
     duration_minutes: Optional[int] = Field(None, ge=1, le=600)

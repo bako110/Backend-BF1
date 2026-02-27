@@ -54,19 +54,68 @@ async def get_all_shows(
 		shows = await list_shows_sorted(sort, order)
 	elif date:
 		shows = await list_shows_by_date(date)
-	else:
-		shows = await list_shows()
 	
 	# Recherche si un terme est fourni
 	if search:
 		search_lower = search.lower()
-		shows = [
-			show for show in shows
-			if search_lower in show.title.lower() or
-			   (show.description and search_lower in show.description.lower()) or
-			   (show.host and search_lower in show.host.lower()) or
-			   (show.category and search_lower in show.category.lower())
-		]
+		print(f"🔍 [SHOWS] Recherche complète: '{search}'")
+		
+		# Obtenir toutes les émissions sans pagination d'abord
+		all_shows = await list_shows()
+		
+		# Recherche complète dans tous les champs
+		filtered_shows = []
+		for show in all_shows:
+			# Recherche dans tous les champs disponibles
+			title_match = search_lower in show.title.lower()
+			desc_match = show.description and search_lower in show.description.lower()
+			host_match = hasattr(show, 'host') and show.host and search_lower in show.host.lower()
+			category_match = hasattr(show, 'category') and show.category and search_lower in show.category.lower()
+			edition_match = hasattr(show, 'edition') and show.edition and search_lower in show.edition.lower()
+			sub_category_match = hasattr(show, 'sub_category') and show.sub_category and search_lower in show.sub_category.lower()
+			tags_match = hasattr(show, 'tags') and show.tags and any(search_lower in tag.lower() for tag in show.tags)
+			season_match = hasattr(show, 'season') and show.season and search_lower in str(show.season).lower()
+			episode_match = hasattr(show, 'episode') and show.episode and search_lower in str(show.episode).lower()
+			
+			if title_match or desc_match or host_match or category_match or edition_match or sub_category_match or tags_match or season_match or episode_match:
+				filtered_shows.append(show)
+				print(f"✅ [SHOWS] Match trouvé: '{show.title}' (titre:{title_match}, desc:{desc_match}, host:{host_match}, cat:{category_match}, edition:{edition_match})")
+		
+		print(f"🎯 [SHOWS] Résultats après recherche complète: {len(filtered_shows)}")
+		
+		# Appliquer les autres filtres si nécessaire
+		if sort:
+			if sort == "date":
+				filtered_shows.sort(key=lambda x: getattr(x, 'created_at', x.updated_at or datetime.min), reverse=(order == "desc"))
+			elif sort == "title":
+				filtered_shows.sort(key=lambda x: x.title.lower(), reverse=(order == "desc"))
+			elif sort == "views":
+				filtered_shows.sort(key=lambda x: getattr(x, 'views', 0), reverse=(order == "desc"))
+		
+		# Pagination sur les résultats filtrés
+		total_filtered = len(filtered_shows)
+		start = (page - 1) * page_size
+		end = start + page_size
+		shows = filtered_shows[start:end]
+		
+		result_shows = shows
+		total_count = total_filtered
+	else:
+		# Recherche normale sans terme de recherche
+		if sort:
+			shows = await list_shows_sorted(sort, order)
+		elif date:
+			shows = await list_shows_by_date(date)
+		else:
+			shows = await list_shows()
+		
+		# Pagination normale
+		total_count = len(shows)
+		start = (page - 1) * page_size
+		end = start + page_size
+		shows = shows[start:end]
+		
+		result_shows = shows
 	
 	# Pagination
 	start = (page - 1) * page_size

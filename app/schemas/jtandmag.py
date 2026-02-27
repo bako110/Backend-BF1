@@ -10,7 +10,8 @@ class JTandMagBase(BaseModel):
     image: Optional[HttpUrl] = Field(None, description="Image de l'émission")
     video_url: Optional[str] = Field(None, description="URL de la vidéo (YouTube ou directe)")
     description: str = Field(..., min_length=1, max_length=5000, description="Description")
-    host: str = Field(..., min_length=1, max_length=120, description="Animateur / présentateur")
+    host: Optional[str] = Field(None, min_length=1, max_length=120, description="Animateur / présentateur")
+    edition: Optional[str] = Field(None, min_length=1, max_length=50, description="Édition ou saison")
     allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
     rating: float = Field(default=0, ge=0, le=5, description="Note (0 à 5)")
@@ -33,6 +34,7 @@ class JTandMagUpdate(BaseModel):
     video_url: Optional[str] = None
     description: Optional[str] = Field(None, min_length=1, max_length=5000)
     host: Optional[str] = Field(None, min_length=1, max_length=120)
+    edition: Optional[str] = Field(None, min_length=1, max_length=50)
     allow_comments: Optional[bool] = None
 
     rating: Optional[float] = Field(None, ge=0, le=5)

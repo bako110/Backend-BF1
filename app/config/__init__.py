@@ -27,7 +27,7 @@ from app.models.archive_purchase import ArchivePurchase
 from app.models.payment_method import PaymentMethod
 from app.models.recording import RecordingSession
 from app.models.category import Category
-from app.models.emission import Emission
+from app.models.sport import Sport
 from app.api.contact import ContactMessageDoc
 from app.models import enums
 from dotenv import load_dotenv
@@ -44,6 +44,6 @@ async def init_db():
             Movie, User, Show, Favorite, Like, Comment, BreakingNews, Notification,
             Subscription, SubscriptionPlan, Message, Divertissement, PopularPrograms, Reel, Reportage, JTandMag, Share,
             Program, LiveChannel, ProgramReminder, UserSettings, SupportTicket, FAQ, AppInfo, TeamMember, Archive,
-            ArchivePurchase, PaymentMethod, RecordingSession, Category, Emission, ContactMessageDoc
+            ArchivePurchase, PaymentMethod, RecordingSession, Category, Sport, ContactMessageDoc
         ]
     )

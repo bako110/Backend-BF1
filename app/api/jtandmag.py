@@ -26,13 +26,32 @@ async def get_all_jtandmag(
 	# Si un terme de recherche est fourni, filtrer les résultats
 	if search:
 		search_lower = search.lower()
-		jtandmags = [
-			jtm for jtm in jtandmags
-			if search_lower in jtm.title.lower() or
-			   (jtm.description and search_lower in jtm.description.lower()) or
-			   (jtm.host and search_lower in jtm.host.lower()) or
-			   (jtm.edition and search_lower in jtm.edition.lower())
-		]
+		print(f"🔍 [JTANDMAG] Recherche complète: '{search}'")
+		
+		# Obtenir tous les JT et Mag sans pagination d'abord
+		all_jtandmag = await list_jtandmag(0, 1000)  # Grande limite pour obtenir tous
+		
+		# Recherche complète dans tous les champs
+		filtered_jtandmag = []
+		for jtm in all_jtandmag:
+			# Recherche dans tous les champs disponibles (avec vérification sécurisée)
+			title_match = search_lower in jtm.title.lower()
+			desc_match = jtm.description and search_lower in jtm.description.lower()
+			host_match = hasattr(jtm, 'host') and jtm.host and search_lower in jtm.host.lower()
+			category_match = hasattr(jtm, 'category') and jtm.category and search_lower in jtm.category.lower()
+			edition_match = hasattr(jtm, 'edition') and jtm.edition and search_lower in jtm.edition.lower()
+			sub_category_match = hasattr(jtm, 'sub_category') and jtm.sub_category and search_lower in jtm.sub_category.lower()
+			rating_match = hasattr(jtm, 'rating') and jtm.rating and search_lower in str(jtm.rating).lower()
+			tags_match = hasattr(jtm, 'tags') and jtm.tags and any(search_lower in tag.lower() for tag in jtm.tags)
+			
+			if title_match or desc_match or host_match or category_match or edition_match or sub_category_match or rating_match or tags_match:
+				filtered_jtandmag.append(jtm)
+				print(f"✅ [JTANDMAG] Match trouvé: '{jtm.title}' (titre:{title_match}, desc:{desc_match}, host:{host_match}, cat:{category_match}, edition:{edition_match})")
+		
+		print(f"🎯 [JTANDMAG] Résultats après recherche complète: {len(filtered_jtandmag)}")
+		
+		# Pagination sur les résultats filtrés
+		jtandmags = filtered_jtandmag[skip:skip + limit]
 	
 	return jtandmags
 
