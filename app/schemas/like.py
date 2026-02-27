@@ -9,11 +9,13 @@ class LikeBase(BaseModel):
         "movie",
         "show",
         "breaking_news",
-        "interview",
+        "reportage",
         "reel",
-        "replay",
-        "trending_show",
-        "popular_program"
+        "divertissement",
+        "jtandmag",
+        "popular_program",
+        "archive",
+        "program"
     ] = Field(..., description="Type de contenu")
 
 class LikeCreate(LikeBase):

@@ -9,11 +9,12 @@ class CommentBase(BaseModel):
         "movie",
         "show",
         "breaking_news",
-        "interview",
-        "reel",
-        "replay",
-        "trending_show",
-        "popular_program"
+        "reportage",
+        "divertissement",
+        "jtandmag",
+        "popular_program",
+        "archive",
+        "program"
     ] = Field(..., description="Type de contenu")
     text: str = Field(..., min_length=1, max_length=1000, description="Texte du commentaire")
 

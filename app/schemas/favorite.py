@@ -7,11 +7,12 @@ ContentType = Literal[
 	"movie",
 	"show",
 	"breaking_news",
-	"interview",
-	"reel",
-	"replay",
-	"trending_show",
-	"popular_program"
+	"reportage",
+	"divertissement",
+	"jtandmag",
+	"popular_program",
+	"archive",
+	"program"
 ]
 
 
