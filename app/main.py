@@ -24,7 +24,7 @@ from app.api import (
     shows, movies, users, favorites, breakingNews, notifications, subscriptions, payments, premium,
     contact, comments, likes, messages, jtandmag, reel, reportage, divertissement, popularPrograms, shares,
     programs, stats, user_settings, support, about, archives, liveStream, upload, views, username_generator,
-    categories, websocket, uploads, subscription_plans
+    categories, websocket, subscription_plans
 )
 from app.api import sport
 
@@ -75,7 +75,7 @@ api_v1_router.include_router(contact.router, prefix="/contact", tags=["Contact"]
 api_v1_router.include_router(comments.router, prefix="/comments", tags=["Comments"])
 api_v1_router.include_router(likes.router, prefix="/likes", tags=["Likes"])
 api_v1_router.include_router(messages.router, prefix="/messages", tags=["Messages"])
-api_v1_router.include_router(uploads.router, prefix="/uploads", tags=["Uploads"])
+# api_v1_router.include_router(uploads.router, prefix="/uploads", tags=["Uploads"])
 api_v1_router.include_router(subscription_plans.router, prefix="/subscription-plans", tags=["Subscription Plans"])
 api_v1_router.include_router(jtandmag.router, prefix="/jtandmag", tags=["JT and Magazines"])
 api_v1_router.include_router(reel.router, prefix="/reels", tags=["Reels"])
