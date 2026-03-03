@@ -14,7 +14,8 @@ class CommentBase(BaseModel):
         "jtandmag",
         "popular_program",
         "archive",
-        "program"
+        "program",
+        "sport"
     ] = Field(..., description="Type de contenu")
     text: str = Field(..., min_length=1, max_length=1000, description="Texte du commentaire")
 
