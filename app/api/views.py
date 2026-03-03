@@ -42,7 +42,8 @@ async def increment_view(view_request: ViewRequest):
             'jtandmag': JTandMag,
             'movie': Movie,
             'reel': Reel,
-            'emission': Emission
+            'sport': Sport,
+            'sports': Sport
         }
         
         if content_type not in model_map:
