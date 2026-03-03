@@ -48,10 +48,10 @@ async def search_content(
             {
                 "id": str(s.id),
                 "title": s.title,
-                "description": s.description,
-                "image_url": s.image_url or s.image,
+                "description": s.description or "",
+                "image_url": s.image or s.thumbnail or "",
                 "type": "sport",
-                "sport_type": s.sport_type
+                "sport_type": s.sport_type or ""
             }
             for s in sports
         ]
@@ -68,8 +68,8 @@ async def search_content(
             {
                 "id": str(s.id),
                 "title": s.title,
-                "description": s.description,
-                "image_url": s.image_url or s.thumbnail,
+                "description": s.description or "",
+                "image_url": getattr(s, 'image_url', None) or getattr(s, 'thumbnail', None) or getattr(s, 'image', None) or "",
                 "type": "show"
             }
             for s in shows
@@ -87,8 +87,8 @@ async def search_content(
             {
                 "id": str(r.id),
                 "title": r.title,
-                "description": r.description,
-                "image_url": r.image_url or r.image,
+                "description": r.description or "",
+                "image_url": getattr(r, 'image_url', None) or getattr(r, 'image', None) or "",
                 "type": "reportage"
             }
             for r in reportages
@@ -106,8 +106,8 @@ async def search_content(
             {
                 "id": str(d.id),
                 "title": d.title,
-                "description": d.description,
-                "image_url": d.image_url or d.image,
+                "description": d.description or "",
+                "image_url": getattr(d, 'image_url', None) or getattr(d, 'image', None) or "",
                 "type": "divertissement"
             }
             for d in divertissements
@@ -125,8 +125,8 @@ async def search_content(
             {
                 "id": str(j.id),
                 "title": j.title,
-                "description": j.description,
-                "image_url": j.image_url or j.image,
+                "description": j.description or "",
+                "image_url": getattr(j, 'image_url', None) or getattr(j, 'image', None) or "",
                 "type": "jtandmag"
             }
             for j in jtandmag
@@ -136,7 +136,7 @@ async def search_content(
         news = await BreakingNews.find(
             {"$or": [
                 {"title": {"$regex": query, "$options": "i"}},
-                {"content": {"$regex": query, "$options": "i"}}
+                {"description": {"$regex": query, "$options": "i"}}
             ]}
         ).limit(limit).to_list()
         
@@ -144,8 +144,8 @@ async def search_content(
             {
                 "id": str(n.id),
                 "title": n.title,
-                "description": n.content[:200] if n.content else "",
-                "image_url": n.image_url,
+                "description": (n.description[:200] if n.description else ""),
+                "image_url": getattr(n, 'image', None) or "",
                 "type": "news"
             }
             for n in news
@@ -163,8 +163,8 @@ async def search_content(
             {
                 "id": str(a.id),
                 "title": a.title,
-                "description": a.description,
-                "image_url": a.image_url or a.image,
+                "description": a.description or "",
+                "image_url": getattr(a, 'image_url', None) or getattr(a, 'image', None) or "",
                 "type": "archive"
             }
             for a in archives
