@@ -24,7 +24,7 @@ from app.api import (
     shows, movies, users, favorites, breakingNews, notifications, subscriptions, payments, premium,
     contact, comments, likes, messages, jtandmag, reel, reportage, divertissement, popularPrograms, shares,
     programs, stats, user_settings, support, about, archives, liveStream, upload, views, username_generator,
-    categories, websocket, subscription_plans, emission_categories
+    categories, websocket, subscription_plans, emission_categories, search
 )
 from app.api import sport
 
@@ -96,6 +96,7 @@ api_v1_router.include_router(username_generator.router, prefix="/username", tags
 api_v1_router.include_router(categories.router, prefix="/categories", tags=["Categories"])
 api_v1_router.include_router(emission_categories.router, prefix="/emission-categories", tags=["Emission Categories"])
 api_v1_router.include_router(sport.router, prefix="/sports", tags=["Sports"])
+api_v1_router.include_router(search.router, prefix="/search", tags=["Search"])
 
 # WebSocket router
 app.include_router(websocket.router)
