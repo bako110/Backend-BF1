@@ -8,6 +8,7 @@ from app.models.reel import Reel
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
 from app.models.popularPrograms import PopularPrograms
+from app.models.sport import Sport
 from app.utils.engagement import increment_comment
 from app.schemas.comment import CommentCreate, CommentUpdate
 from typing import List, Optional
@@ -40,7 +41,8 @@ CONTENT_MODELS = {
     "reel": Reel,
     "reportage": Reportage,
     "jtandmag": JTandMag,
-    "popular_program": PopularPrograms
+    "popular_program": PopularPrograms,
+    "sport": Sport
 }
 
 
