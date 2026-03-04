@@ -8,6 +8,7 @@ from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
 from app.models.popularPrograms import PopularPrograms
 from app.models.sport import Sport
+from app.models.emission_category import EmissionCategory
 from app.schemas.favorite import FavoriteCreate
 from typing import List, Optional, Dict
 
@@ -21,7 +22,8 @@ CONTENT_MODELS = {
 	"reportage": Reportage,
 	"jtandmag": JTandMag,
 	"popular_program": PopularPrograms,
-	"sport": Sport
+	"sport": Sport,
+	"emission_category": EmissionCategory
 }
 
 
@@ -112,7 +114,12 @@ async def list_favorites(user_id: str, content_type: str = None) -> List[Dict]:
 		if content:
 			fav_dict['content_title'] = getattr(content, 'title', None) or getattr(content, 'name', None)
 			fav_dict['content_type'] = fav.content_type
-			fav_dict['image_url'] = getattr(content, 'image_url', None) or getattr(content, 'image', None)
+			fav_dict['image_url'] = (
+				getattr(content, 'image_url', None) or 
+				getattr(content, 'image', None) or 
+				getattr(content, 'image_main', None) or 
+				getattr(content, 'thumbnail', None)
+			)
 		
 		enriched_favorites.append(fav_dict)
 	
