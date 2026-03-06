@@ -89,7 +89,7 @@ api_v1_router.include_router(user_settings.router, prefix="/settings", tags=["Us
 api_v1_router.include_router(support.router, prefix="/support", tags=["Support"])
 api_v1_router.include_router(about.router, prefix="/about", tags=["About"])
 api_v1_router.include_router(archives.router, prefix="/archives", tags=["Archives"])
-api_v1_router.include_router(liveStream.router, prefix="/live-stream", tags=["Live Stream"])
+api_v1_router.include_router(liveStream.router, prefix="/livestream", tags=["Live Stream"])
 api_v1_router.include_router(upload.router, prefix="/upload", tags=["Upload"])
 api_v1_router.include_router(views.router, prefix="/views", tags=["Views"])
 api_v1_router.include_router(username_generator.router, prefix="/username", tags=["Username Generator"])

@@ -24,6 +24,24 @@ async def websocket_endpoint(websocket: WebSocket):
                         "type": "subscribed",
                         "notification_types": message.get("notification_types", [])
                     }))
+                elif message.get("type") == "join_livestream":
+                    # L'utilisateur rejoint le livestream
+                    user_id = message.get("user_id")  # Optionnel, peut être None pour visiteurs anonymes
+                    await websocket_manager.join_livestream(websocket, user_id)
+                    await websocket.send_text(json.dumps({
+                        "type": "joined_livestream",
+                        "status": "success",
+                        "total_viewers": websocket_manager.get_livestream_viewer_count()
+                    }))
+                elif message.get("type") == "leave_livestream":
+                    # L'utilisateur quitte le livestream
+                    user_id = message.get("user_id")
+                    await websocket_manager.leave_livestream(websocket, user_id)
+                    await websocket.send_text(json.dumps({
+                        "type": "left_livestream", 
+                        "status": "success",
+                        "total_viewers": websocket_manager.get_livestream_viewer_count()
+                    }))
             except json.JSONDecodeError:
                 # Message non-JSON, ignorer
                 pass
