@@ -11,6 +11,8 @@ class EmissionCategory(Document):
     image_icon: Optional[str] = Field(None, description="URL de l'icône")
     order: int = Field(default=0, description="Ordre d'affichage")
     is_active: bool = Field(default=True, description="Catégorie active ou non")
+    is_new: bool = Field(default=False, description="Nouvelle catégorie")
+    likes: int = Field(default=0, description="Nombre de likes")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Date de création")
     updated_at: Optional[datetime] = Field(None, description="Date de mise à jour")
 

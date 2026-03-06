@@ -16,11 +16,13 @@ from datetime import datetime
 
 async def add_comment(user_id: str, data: CommentCreate) -> Optional[Comment]:
     """Ajouter un commentaire avec validation du contenu"""
-    # Vérifier que le contenu existe
-    content = await _get_content(data.content_type, data.content_id)
-    
-    if not content:
-        return None
+    # Pour le livestream, pas besoin de vérifier l'existence du contenu
+    if data.content_type != "livestream":
+        # Vérifier que le contenu existe
+        content = await _get_content(data.content_type, data.content_id)
+        
+        if not content:
+            return None
     
     comment = Comment(
         user_id=user_id,
@@ -29,7 +31,11 @@ async def add_comment(user_id: str, data: CommentCreate) -> Optional[Comment]:
         text=data.text
     )
     await comment.insert()
-    await increment_comment(data.content_type, data.content_id, 1)
+    
+    # Pour livestream, on n'incrémente pas le compteur sur un modèle
+    if data.content_type != "livestream":
+        await increment_comment(data.content_type, data.content_id, 1)
+    
     return comment
 
 
@@ -128,10 +134,15 @@ async def delete_comment(comment_id: str, user_id: str, is_admin: bool = False) 
     
     if comment.user_id != user_id and not is_admin:
         return False
+    
     content_id = comment.content_id
     content_type = comment.content_type
     await comment.delete()
-    await increment_comment(content_type, content_id, -1)
+    
+    # Pour livestream, on n'incrémente pas le compteur sur un modèle
+    if content_type != "livestream":
+        await increment_comment(content_type, content_id, -1)
+    
     return True
 
 async def count_comments(content_id: str, content_type: str) -> int:

@@ -9,6 +9,7 @@ from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
 from app.models.popularPrograms import PopularPrograms
 from app.models.sport import Sport
+from app.models.emission_category import EmissionCategory
 from app.utils.engagement import increment_like
 from app.schemas.like import LikeCreate
 from typing import List, Optional, Dict, Any
@@ -18,14 +19,16 @@ async def toggle_like(user_id: str, data: LikeCreate) -> Dict[str, any]:
     try:
         print(f"🔍 Toggle like - User: {user_id}, Content: {data.content_id}, Type: {data.content_type}")
         
-        # Vérifier que le contenu existe
-        content = await _get_content(data.content_type, data.content_id)
-        if content:
-            print(f"✅ Contenu trouvé: {getattr(content, 'title', None) or getattr(content, 'name', None)}")
-        
-        if not content:
-            print(f"❌ Contenu introuvable: {data.content_id}")
-            return {"success": False, "message": "Contenu introuvable"}
+        # Pour le livestream, pas besoin de vérifier l'existence du contenu
+        if data.content_type != "livestream":
+            # Vérifier que le contenu existe
+            content = await _get_content(data.content_type, data.content_id)
+            if content:
+                print(f"✅ Contenu trouvé: {getattr(content, 'title', None) or getattr(content, 'name', None)}")
+            
+            if not content:
+                print(f"❌ Contenu introuvable: {data.content_id}")
+                return {"success": False, "message": "Contenu introuvable"}
         
         # Vérifier si le like existe déjà
         existing_like = await Like.find_one(
@@ -38,7 +41,9 @@ async def toggle_like(user_id: str, data: LikeCreate) -> Dict[str, any]:
             # Retirer le like
             print(f"💔 Retrait du like existant: {existing_like.id}")
             await existing_like.delete()
-            await increment_like(data.content_type, data.content_id, -1)
+            # Pour livestream, on n'incrémente pas le compteur sur un modèle
+            if data.content_type != "livestream":
+                await increment_like(data.content_type, data.content_id, -1)
             return {"success": True, "action": "unliked", "message": "Like retiré"}
         else:
             # Ajouter le like
@@ -49,7 +54,9 @@ async def toggle_like(user_id: str, data: LikeCreate) -> Dict[str, any]:
                 content_type=data.content_type
             )
             await like.insert()
-            await increment_like(data.content_type, data.content_id, 1)
+            # Pour livestream, on n'incrémente pas le compteur sur un modèle
+            if data.content_type != "livestream":
+                await increment_like(data.content_type, data.content_id, 1)
             print(f"✅ Like ajouté avec succès: {like.id}")
             return {"success": True, "action": "liked", "message": "Like ajouté", "like_id": str(like.id)}
     except Exception as e:
@@ -69,6 +76,7 @@ CONTENT_MODELS = {
     "jtandmag": JTandMag,
     "popular_program": PopularPrograms,
     "sport": Sport,
+    "emission_category": EmissionCategory,
 }
 
 
