@@ -1,8 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.utils.auth import get_current_user, get_admin_user
 from app.schemas.like import LikeCreate
-from app.services.like_service import toggle_like, get_likes, count_likes, check_user_liked, remove_like, get_all_likes
-from typing import List, Dict
+from app.services.like_service import (
+    toggle_like, get_likes, count_likes, check_user_liked, 
+    remove_like, get_all_likes, get_user_likes
+)
+from typing import List, Dict, Optional
 
 router = APIRouter()
 
@@ -42,6 +45,28 @@ async def check_liked(content_id: str, content_type: str, current_user=Depends(g
     """Vérifier si l'utilisateur a liké ce contenu"""
     liked = await check_user_liked(str(current_user.id), content_id, content_type)
     return {"liked": liked}
+
+@router.get("/my-likes")
+async def get_my_likes(
+    current_user=Depends(get_current_user),
+    content_type: Optional[str] = None
+):
+    """Récupérer tous les likes de l'utilisateur connecté avec filtrage optionnel par type"""
+    try:
+        likes = await get_user_likes(str(current_user.id), content_type)
+        # Convertir en format simple pour le frontend
+        result = []
+        for like in likes:
+            result.append({
+                "id": str(like.id),
+                "content_id": like.content_id,
+                "content_type": like.content_type,
+                "created_at": like.created_at
+            })
+        return result
+    except Exception as e:
+        print(f"❌ Erreur get_my_likes: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des likes: {str(e)}")
 
 @router.delete("/{like_id}")
 async def remove_like_api(like_id: str, current_user=Depends(get_current_user)):

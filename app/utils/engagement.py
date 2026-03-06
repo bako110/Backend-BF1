@@ -8,6 +8,8 @@ from app.models.reel import Reel
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
 from app.models.popularPrograms import PopularPrograms
+from app.models.sport import Sport
+from app.models.emission_category import EmissionCategory
 
 
 CONTENT_MODELS = {
@@ -18,7 +20,9 @@ CONTENT_MODELS = {
     "reel": Reel,
     "reportage": Reportage,
     "jtandmag": JTandMag,
-    "popular_program": PopularPrograms
+    "popular_program": PopularPrograms,
+    "sport": Sport,
+    "emission_category": EmissionCategory,
 }
 
 

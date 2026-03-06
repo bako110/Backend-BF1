@@ -13,7 +13,10 @@ ContentType = Literal[
     "popular_program",
     "archive",
     "program",
-    "emission"
+    "emission",
+    "sport",
+    "reel",
+    "emission_category"
 ]
 
 

@@ -4,7 +4,9 @@ from pydantic import BaseModel, Field
 from app.utils.auth import get_admin_user, get_optional_user, get_current_user
 from app.schemas.reel import ReelCreate, ReelUpdate, ReelOut
 from app.schemas.comment import CommentCreate, CommentOut
-from app.services.reel_service import create_reel, get_reel, list_reels, update_reel, delete_reel
+from app.services.reel_service import (
+	create_reel, get_reel, list_reels, update_reel, delete_reel, increment_reel_view
+)
 from app.services import like_service, comment_service, share_service
 
 router = APIRouter()
@@ -30,6 +32,18 @@ async def get_one_reel(reel_id: str, current_user=Depends(get_optional_user)):
 	if not reel:
 		raise HTTPException(status_code=404, detail="Reel not found")
 	return reel
+
+
+@router.post("/{reel_id}/view")
+async def track_reel_view(reel_id: str, current_user=Depends(get_optional_user)):
+	"""
+	Incrémenter le compteur de vues quand un utilisateur commence à regarder un reel
+	Peut être appelé par des utilisateurs connectés ou non
+	"""
+	success = await increment_reel_view(reel_id)
+	if not success:
+		raise HTTPException(status_code=404, detail="Reel not found")
+	return {"success": True, "message": "View tracked"}
 
 
 @router.patch("/{reel_id}", response_model=ReelOut)
