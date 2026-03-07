@@ -22,7 +22,7 @@ async def update_show_live(show_id: str, data: ShowLiveUpdate, current_user=Depe
 	if not show:
 		raise HTTPException(status_code=404, detail="Show not found")
 	return show
-@router.post("/", response_model=ShowOut)
+@router.post("", response_model=ShowOut)
 async def add_show(show: ShowCreate, current_user=Depends(get_admin_user)):
 	result = await create_show(show)
 	await cache_manager.delete_pattern("shows:*")
@@ -35,7 +35,7 @@ async def add_show(show: ShowCreate, current_user=Depends(get_admin_user)):
 		print(f"⚠️ Erreur envoi notifications nouvelle émission: {e}")
 	
 	return result
-@router.get("/", response_model=List[ShowOut])
+@router.get("", response_model=List[ShowOut])
 async def get_all_shows(
 	sort: str = None,
 	order: str = "desc",

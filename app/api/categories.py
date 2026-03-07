@@ -7,7 +7,7 @@ from datetime import datetime
 
 router = APIRouter()
 
-@router.post("/", response_model=CategoryResponse)
+@router.post("", response_model=CategoryResponse)
 async def create_category(category: CategoryCreate):
     """Créer une nouvelle catégorie"""
     # Vérifier si la catégorie existe déjà
@@ -20,7 +20,7 @@ async def create_category(category: CategoryCreate):
     return new_category
 
 
-@router.get("/", response_model=List[CategoryResponse])
+@router.get("", response_model=List[CategoryResponse])
 async def get_all_categories(current_user=Depends(get_optional_user)):
     """Lister toutes les catégories"""
     categories = await Category.find_all().to_list()

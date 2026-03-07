@@ -10,12 +10,12 @@ from typing import List
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("")
 async def list_all_comments(current_user=Depends(get_admin_user), skip: int = 0, limit: int = 1000):
     """Lister tous les commentaires (admin seulement)"""
     return await get_all_comments(skip, limit)
 
-@router.post("/")
+@router.post("")
 async def create_comment(comment: CommentCreate, current_user=Depends(get_current_user)):
     """Créer un commentaire"""
     result = await add_comment(str(current_user.id), comment)

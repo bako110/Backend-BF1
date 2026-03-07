@@ -12,7 +12,7 @@ async def add_reportage(reportage: ReportageCreate, current_user=Depends(get_adm
 	return await create_reportage(reportage)
 
 
-@router.get("/", response_model=List[ReportageOut])
+@router.get("", response_model=List[ReportageOut])
 async def get_all_reportages(
 	skip: int = 0, 
 	limit: int = 50,

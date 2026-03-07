@@ -13,7 +13,7 @@ from app.utils.auth import get_current_user, get_admin_user, get_optional_user
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("")  
 async def get_archives(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
@@ -107,7 +107,7 @@ async def get_archive(
     return archive
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_archive(
     archive: ArchiveCreate
 ):

@@ -6,7 +6,7 @@ from typing import List
 
 router = APIRouter()
 
-@router.post("/", response_model=NotificationOut)
+@router.post("", response_model=NotificationOut)
 async def add_notification(notification: NotificationCreate, current_user=Depends(get_admin_user)):
 	"""Créer une notification (admin ou broadcast)"""
 	return await create_notification(notification)

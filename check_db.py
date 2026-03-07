@@ -5,9 +5,6 @@ Usage: python check_db.py
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 async def check_collections():
     MONGODB_URI = os.getenv("MONGODB_URI")

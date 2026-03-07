@@ -6,7 +6,7 @@ from typing import List
 
 router = APIRouter()
 
-@router.post("/", response_model=MovieOut)
+@router.post("", response_model=MovieOut)
 async def add_movie(movie: MovieCreate, current_user=Depends(get_admin_user)):
 	new_movie = await create_movie(movie)
 	
@@ -19,7 +19,7 @@ async def add_movie(movie: MovieCreate, current_user=Depends(get_admin_user)):
 	
 	return new_movie
 
-@router.get("/")
+@router.get("")
 async def get_all_movies(
 	skip: int = 0, 
 	limit: int = 50, 

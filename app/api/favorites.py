@@ -9,12 +9,12 @@ from typing import List
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("")
 async def list_all_favorites(current_user=Depends(get_admin_user), skip: int = 0, limit: int = 1000):
 	"""Lister tous les favoris (admin seulement)"""
 	return await get_all_favorites(skip, limit)
 
-@router.post("/")
+@router.post("")
 async def add_fav(fav: FavoriteCreate, current_user=Depends(get_current_user)):
 	"""Ajouter un favori avec vérification des doublons"""
 	result = await add_favorite(str(current_user.id), fav)

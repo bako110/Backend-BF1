@@ -15,7 +15,7 @@ from app.models.archive import Archive
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("")
 async def search_content(
     q: str = Query(..., min_length=2, description="Terme de recherche"),
     limit: int = Query(8, ge=1, le=50, description="Nombre de résultats par catégorie")

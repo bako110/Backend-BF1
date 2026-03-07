@@ -44,7 +44,8 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url=None,
     redoc_url="/redoc" if settings.DEBUG else None,
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
+    redirect_slashes=False
 )
 
 # Middlewares

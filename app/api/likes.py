@@ -9,7 +9,7 @@ from typing import List, Dict, Optional
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("")
 async def list_all_likes(current_user=Depends(get_admin_user), skip: int = 0, limit: int = 1000):
     """Lister tous les likes (admin seulement)"""
     return await get_all_likes(skip, limit)

@@ -6,12 +6,12 @@ from typing import List
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("")
 async def list_all_subscriptions(current_user=Depends(get_admin_user), skip: int = 0, limit: int = 1000):
     """Lister tous les abonnements (admin seulement)"""
     return await get_all_subscriptions(skip, limit)
 
-@router.post("/")
+@router.post("")
 async def add_subscription(sub: SubscriptionCreate, current_user=Depends(get_current_user)):
     """Créer un abonnement"""
     return await create_subscription(sub)

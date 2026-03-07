@@ -9,7 +9,7 @@ from app.services.popularPrograms import (
 router = APIRouter()
 
 
-@router.post("/", response_model=PopularProgramsOut)
+@router.post("", response_model=PopularProgramsOut)
 async def add_program(program: PopularProgramsCreate, current_user=Depends(get_admin_user)):
 	new_program = await create_program(program)
 	
@@ -27,7 +27,7 @@ async def add_program(program: PopularProgramsCreate, current_user=Depends(get_a
 	return new_program
 
 
-@router.get("/", response_model=List[PopularProgramsOut])
+@router.get("", response_model=List[PopularProgramsOut])
 async def get_all_programs(
 	skip: int = 0,
 	limit: int = 50,
