@@ -7,7 +7,7 @@ from datetime import datetime
 
 router = APIRouter()
 
-@router.post("/", response_model=EmissionCategoryResponse)
+@router.post("", response_model=EmissionCategoryResponse)
 async def create_emission_category(category: EmissionCategoryCreate, current_user=Depends(get_admin_user)):
     """Créer une nouvelle catégorie d'émission (Admin uniquement)"""
     # Vérifier si la catégorie existe déjà
@@ -20,7 +20,7 @@ async def create_emission_category(category: EmissionCategoryCreate, current_use
     return new_category
 
 
-@router.get("/", response_model=List[EmissionCategoryResponse])
+@router.get("", response_model=List[EmissionCategoryResponse])
 async def get_all_emission_categories(current_user=Depends(get_optional_user)):
     """Lister toutes les catégories d'émissions (triées par ordre)"""
     categories = await EmissionCategory.find_all().sort("+order").to_list()

@@ -6,7 +6,7 @@ from typing import List
 
 router = APIRouter()
 
-@router.post("/", response_model=BreakingNewsOut)
+@router.post("", response_model=BreakingNewsOut)
 async def add_news(news: BreakingNewsCreate, current_user=Depends(get_admin_user)):
 	new_news = await create_news(news)
 	
@@ -28,7 +28,7 @@ async def add_news(news: BreakingNewsCreate, current_user=Depends(get_admin_user
 	
 	return new_news
 
-@router.get("/", response_model=List[BreakingNewsOut])
+@router.get("", response_model=List[BreakingNewsOut])
 async def get_all_news(
 	skip: int = 0,
 	limit: int = 50,

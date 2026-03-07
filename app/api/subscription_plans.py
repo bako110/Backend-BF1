@@ -8,14 +8,14 @@ from app.services.subscription_plan_service import create_plan, delete_plan, get
 router = APIRouter()
 
 
-@router.get("/", response_model=List[SubscriptionPlanOut])
+@router.get("", response_model=List[SubscriptionPlanOut])
 async def get_plans(active_only: bool = True, current_user=Depends(get_optional_user)):
     """Lister les tarifs/plans. Public par défaut (active_only=True)."""
     plans = await list_plans(active_only=active_only)
     return plans
 
 
-@router.post("/", response_model=SubscriptionPlanOut)
+@router.post("", response_model=SubscriptionPlanOut)
 async def add_plan(data: SubscriptionPlanCreate, current_user=Depends(get_admin_user)):
     return await create_plan(data)
 

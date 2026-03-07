@@ -33,7 +33,7 @@ async def get_current_user_info(current_user=Depends(get_current_user)):
     """Récupérer les informations de l'utilisateur connecté"""
     return current_user
 
-@router.get("/", response_model=List[UserOut])
+@router.get("", response_model=List[UserOut])
 async def get_all_users(current_user=Depends(get_admin_user)):
     """Lister tous les utilisateurs (admin seulement)"""
     return await list_users()

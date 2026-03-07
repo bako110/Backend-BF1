@@ -5,7 +5,7 @@ from app.services.subscription_service import list_subscriptions
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("")
 async def get_premium_content(current_user=Depends(get_optional_user)):
 	"""Lister le contenu premium disponible"""
 	return {

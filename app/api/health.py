@@ -3,7 +3,7 @@ from datetime import datetime
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("")
 async def health_check():
     """
     Endpoint de health check pour vérifier que le backend est opérationnel.

@@ -28,7 +28,7 @@ def get_sport_service() -> SportService:
     return SportService()
 
 
-@router.get("/", response_model=SportList, summary="Lister tous les sports")
+@router.get("", response_model=SportList, summary="Lister tous les sports")
 async def get_all_sports(
     category: Optional[str] = Query(None, description="Filtrer par catégorie"),
     featured: Optional[bool] = Query(None, description="Filtrer les sports en vedette"),
@@ -231,7 +231,7 @@ async def toggle_like(
 
 # Routes administratives (protégées par authentification)
 
-@router.post("/", response_model=SportResponse, summary="Créer un sport")
+@router.post("", response_model=SportResponse, summary="Créer un sport")
 async def create_sport(
     sport_data: SportCreate,
     service: SportService = Depends(get_sport_service),

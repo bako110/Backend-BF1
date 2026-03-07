@@ -79,7 +79,7 @@ async def delete_channel(
 
 # ==================== PROGRAM ROUTES ====================
 
-@router.post("/", response_model=ProgramOut, tags=["Programs"])
+@router.post("", response_model=ProgramOut, tags=["Programs"])
 async def create_program(
     data: ProgramCreate,
     current_user=Depends(get_admin_user)
@@ -89,7 +89,7 @@ async def create_program(
     return program
 
 
-@router.get("/", response_model=List[ProgramOut], tags=["Programs"])
+@router.get("", response_model=List[ProgramOut], tags=["Programs"])
 async def list_programs(
     params: ProgramFilterParams = Depends(),
     search: Optional[str] = Query(None, description="Rechercher dans tous les champs"),

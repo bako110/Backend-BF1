@@ -7,7 +7,7 @@ from typing import List
 router = APIRouter()
 
 
-@router.post("/", response_model=ShareOut)
+@router.post("", response_model=ShareOut)
 async def add_share(data: ShareCreate, current_user=Depends(get_current_user)):
     share = await create_share(str(current_user.id), data)
     if not share:

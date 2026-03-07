@@ -17,7 +17,7 @@ async def add_reel(reel: ReelCreate):
 	return await create_reel(reel)
 
 
-@router.get("/")
+@router.get("")
 async def get_all_reels(
 	skip: int = 0,
 	limit: int = 50,

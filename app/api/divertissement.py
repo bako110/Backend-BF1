@@ -14,7 +14,7 @@ async def add_divertissement(divertissement: DivertissementCreate, current_user=
 	return await create_divertissement(divertissement)
 
 
-@router.get("/", response_model=List[DivertissementOut])
+@router.get("", response_model=List[DivertissementOut])
 async def get_all_divertissement(
 	skip: int = 0, 
 	limit: int = 50,

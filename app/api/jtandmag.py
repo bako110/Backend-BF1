@@ -9,12 +9,12 @@ from app.services.jtandmag_service import (
 router = APIRouter()
 
 
-@router.post("/", response_model=JTandMagOut)
+@router.post("", response_model=JTandMagOut)
 async def add_jtandmag(jtandmag: JTandMagCreate, current_user=Depends(get_admin_user)):
 	return await create_jtandmag(jtandmag)
 
 
-@router.get("/", response_model=List[JTandMagOut])
+@router.get("", response_model=List[JTandMagOut])
 async def get_all_jtandmag(
 	skip: int = 0, 
 	limit: int = 50,

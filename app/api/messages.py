@@ -10,12 +10,12 @@ from typing import List
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("")
 async def list_all_messages(current_user=Depends(get_admin_user), skip: int = 0, limit: int = 1000):
     """Lister tous les messages (admin seulement)"""
     return await get_all_messages(skip, limit)
 
-@router.post("/")
+@router.post("")
 async def create_message(message: MessageCreate, current_user=Depends(get_current_user)):
     """Envoyer un message"""
     result = await send_message(str(current_user.id), message)

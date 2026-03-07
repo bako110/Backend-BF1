@@ -40,7 +40,7 @@ class ContactMessageOut(BaseModel):
 	class Config:
 		from_attributes = True
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def send_contact_message(msg: ContactMessageCreate):
 	"""Envoyer un message de contact"""
 	# Stocker le message en base de données
