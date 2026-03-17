@@ -16,7 +16,8 @@ ContentType = Literal[
     "emission",
     "sport",
     "reel",
-    "emission_category"
+    "emission_category",
+    "series"
 ]
 
 

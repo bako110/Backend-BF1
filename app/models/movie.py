@@ -11,6 +11,7 @@ class Movie(Document):
     duration: Optional[int] = Field(None, description="Durée en minutes")
     image_url: Optional[str] = Field(None, description="URL de l'affiche")
     is_premium: bool = Field(False, description="Film premium ?")
+    required_subscription_category: Optional[str] = Field(None, description="Catégorie d'abonnement requise: basic, standard, premium (None = gratuit)")
     video_url: Optional[str] = Field(None, description="URL de streaming")
     allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
     views: int = Field(default=0, description="Nombre de vues")

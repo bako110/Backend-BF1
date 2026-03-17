@@ -7,6 +7,7 @@ from bson import ObjectId
 class SubscriptionPlanBase(BaseModel):
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=100)
+    category: str = Field(..., min_length=1, max_length=50, pattern="^(basic|standard|premium)$")
     duration_months: int = Field(..., ge=1, le=60)
     price_cents: int = Field(..., ge=0)
     currency: str = Field("XOF", min_length=3, max_length=3)
@@ -20,6 +21,7 @@ class SubscriptionPlanCreate(SubscriptionPlanBase):
 class SubscriptionPlanUpdate(BaseModel):
     code: Optional[str] = Field(None, min_length=1, max_length=50)
     name: Optional[str] = Field(None, min_length=1, max_length=100)
+    category: Optional[str] = Field(None, min_length=1, max_length=50, pattern="^(basic|standard|premium)$")
     duration_months: Optional[int] = Field(None, ge=1, le=60)
     price_cents: Optional[int] = Field(None, ge=0)
     currency: Optional[str] = Field(None, min_length=3, max_length=3)

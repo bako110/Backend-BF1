@@ -5,6 +5,8 @@ from bson import ObjectId
 
 class SubscriptionBase(BaseModel):
 	user_id: str = Field(..., description="ID de l'utilisateur")
+	plan_id: Optional[str] = Field(None, description="ID du plan d'abonnement")
+	category: Optional[str] = Field(None, description="Catégorie: basic, standard ou premium")
 	start_date: Optional[datetime] = Field(None, description="Date de début")
 	end_date: Optional[datetime] = Field(None, description="Date de fin")
 	is_active: bool = Field(True, description="Actif")

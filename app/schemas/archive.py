@@ -12,6 +12,7 @@ class ArchiveBase(BaseModel):
     duration_minutes: int
     is_premium: bool = True
     price: float = 0.0
+    required_subscription_category: Optional[str] = None
     category: Optional[str] = None
     tags: list[str] = []
     archived_date: datetime
@@ -25,6 +26,7 @@ class ArchiveCreate(BaseModel):
     thumbnail: Optional[HttpUrl] = None
     video_url: Optional[HttpUrl] = None
     price: float = 0.0
+    required_subscription_category: Optional[str] = None
     archived_date: datetime
     
     @field_validator('thumbnail', 'video_url', mode='before')
@@ -44,6 +46,7 @@ class ArchiveUpdate(BaseModel):
     duration_minutes: Optional[int] = None
     is_premium: Optional[bool] = None
     price: Optional[float] = None
+    required_subscription_category: Optional[str] = None
     category: Optional[str] = None
     tags: Optional[list[str]] = None
     archived_date: Optional[datetime] = None

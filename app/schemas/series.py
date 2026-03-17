@@ -17,13 +17,14 @@ class SeriesBase(BaseModel):
     banner_url: Optional[str] = None
     trailer_url: Optional[str] = None
     is_premium: bool = Field(default=False)
+    required_subscription_category: Optional[str] = Field(None, description="Catégorie d'abonnement requise: basic, standard, premium")
     allow_comments: bool = Field(default=True)
     cast: List[str] = Field(default=[])
     crew: List[str] = Field(default=[])
     production_company: Optional[str] = None
     network: str = Field(default="BF1")
     episode_duration: int = Field(default=45, ge=1, le=300)
-    total_seasons: int = Field(default=1, ge=1)
+    total_seasons: int = Field(default=0, ge=0)
 
 class SeriesCreate(SeriesBase):
     pass
@@ -41,13 +42,14 @@ class SeriesUpdate(BaseModel):
     banner_url: Optional[str] = None
     trailer_url: Optional[str] = None
     is_premium: Optional[bool] = None
+    required_subscription_category: Optional[str] = None
     allow_comments: Optional[bool] = None
     cast: Optional[List[str]] = None
     crew: Optional[List[str]] = None
     production_company: Optional[str] = None
     network: Optional[str] = None
     episode_duration: Optional[int] = Field(None, ge=1, le=300)
-    total_seasons: Optional[int] = Field(None, ge=1)
+    total_seasons: Optional[int] = Field(None, ge=0)
 
 class SeriesOut(SeriesBase):
     id: str

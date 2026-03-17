@@ -12,7 +12,16 @@ class User(Document):
     hashed_password: str = Field(..., description="Mot de passe hashé")
     is_active: bool = Field(True, description="Compte actif ?")
     is_premium: bool = Field(False, description="Abonné premium ?")
+    subscription_category: Optional[str] = Field(None, description="Catégorie d'abonnement active: basic, standard ou premium")
     is_admin: bool = Field(False, description="Administrateur ?")
+    
+    # Informations de localisation pour adapter les prix
+    location_country_code: Optional[str] = Field(None, description="Code pays de l'utilisateur (ex: BF)")
+    location_is_in_country: Optional[bool] = Field(None, description="Utilisateur au Burkina Faso ?")
+    location_latitude: Optional[float] = Field(None, description="Latitude")
+    location_longitude: Optional[float] = Field(None, description="Longitude")
+    location_updated_at: Optional[datetime] = Field(None, description="Date de dernière mise à jour de localisation")
+    
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
 
@@ -23,5 +32,6 @@ class User(Document):
             IndexModel([("username", 1)], unique=True, name="username_1_unique"),
             "phone",  # Index simple sans contrainte unique pour éviter les problèmes avec null
             "is_premium",
+            "location_is_in_country",
             "created_at"
         ]

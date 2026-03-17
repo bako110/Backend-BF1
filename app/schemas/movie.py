@@ -11,6 +11,7 @@ class MovieBase(BaseModel):
     duration: Optional[int] = Field(None, ge=0, le=500, description="Durée en minutes")
     image_url: Optional[str] = Field(None, description="URL de l'affiche")
     is_premium: bool = Field(False, description="Film premium")
+    required_subscription_category: Optional[str] = Field(None, description="Catégorie d'abonnement requise: basic, standard, premium")
     video_url: Optional[str] = Field(None, description="URL de streaming")
     allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
@@ -25,6 +26,7 @@ class MovieUpdate(BaseModel):
     duration: Optional[int] = Field(None, ge=0, le=500)
     image_url: Optional[str] = None
     is_premium: Optional[bool] = None
+    required_subscription_category: Optional[str] = None
     video_url: Optional[str] = None
     allow_comments: Optional[bool] = None
 

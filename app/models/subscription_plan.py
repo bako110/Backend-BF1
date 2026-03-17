@@ -5,8 +5,9 @@ from datetime import datetime
 
 
 class SubscriptionPlan(Document):
-    code: str = Field(..., description="Code unique du plan (ex: monthly, quarterly, yearly)")
+    code: str = Field(..., description="Code unique du plan (ex: basic_1m, standard_3m, premium_12m)")
     name: str = Field(..., description="Nom affiché")
+    category: str = Field(..., description="Catégorie: basic, standard ou premium")
     duration_months: int = Field(..., ge=1, le=60, description="Durée en mois")
     price_cents: int = Field(..., ge=0, description="Prix en centimes")
     currency: str = Field("XOF", min_length=3, max_length=3, description="Devise ISO")
@@ -19,5 +20,7 @@ class SubscriptionPlan(Document):
         indexes = [
             "code",
             "is_active",
+            "category",
+            [("category", 1), ("duration_months", 1)],
             [("is_active", -1), ("duration_months", 1)]
         ]
