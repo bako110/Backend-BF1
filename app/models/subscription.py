@@ -5,6 +5,8 @@ from datetime import datetime
 
 class Subscription(Document):
     user_id: str = Field(..., description="ID de l'utilisateur abonné")
+    plan_id: Optional[str] = Field(None, description="ID du plan d'abonnement")
+    category: Optional[str] = Field(None, description="Catégorie: basic, standard ou premium")
     start_date: datetime = Field(default_factory=datetime.utcnow)
     end_date: Optional[datetime] = Field(None, description="Date de fin d'abonnement")
     is_active: bool = Field(True, description="Abonnement actif ?")

@@ -1,13 +1,13 @@
 from beanie import Document
-from pydantic import HttpUrl, Field
+from pydantic import Field
 from datetime import datetime
 from typing import Optional
 
 
 class Reel(Document):
-    video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
+    video_url: Optional[str] = Field(None, description="URL de la vidéo")
     title: str = Field(..., description="Titre de la vidéo")
-    description: str = Field(..., description="Description de la vidéo")
+    description: Optional[str] = Field(None, description="Description de la vidéo")
     allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
     likes: int = Field(default=0, description="Nombre de likes")

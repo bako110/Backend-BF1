@@ -17,7 +17,8 @@ class CommentBase(BaseModel):
         "program",
         "sport",
         "reel",
-        "emission_category"
+        "emission_category",
+        "series"
     ] = Field(..., description="Type de contenu")
     text: str = Field(..., min_length=1, max_length=1000, description="Texte du commentaire")
 

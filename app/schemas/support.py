@@ -25,8 +25,8 @@ class SupportTicketUpdate(BaseModel):
 
 class SupportTicketResponse(BaseModel):
     message: str
-    author: str  # admin or user
-    created_at: datetime
+    author: Optional[str] = None  # Sera défini par le serveur
+    created_at: Optional[datetime] = None  # Sera défini par le serveur
 
 
 class SupportTicketOut(SupportTicketBase):

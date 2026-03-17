@@ -19,6 +19,7 @@ class Archive(Document):
     # Informations de paiement
     is_premium: bool = Field(default=True, description="Contenu premium (payant)")
     price: float = Field(default=0.0, description="Prix de l'archive (si achat individuel)")
+    required_subscription_category: Optional[str] = Field(None, description="Catégorie d'abonnement requise: basic, standard, premium (None = gratuit)")
     
     # Statistiques
     views: int = Field(default=0, description="Nombre de vues")
