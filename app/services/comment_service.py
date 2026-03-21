@@ -1,0 +1,169 @@
+from app.models.comment import Comment
+from app.models.user import User
+from app.models.movie import Movie
+from app.models.show import Show
+from app.models.breakingNews import BreakingNews
+from app.models.divertissement import Divertissement
+from app.models.reel import Reel
+from app.models.reportage import Reportage
+from app.models.jtandmag import JTandMag
+from app.models.popularPrograms import PopularPrograms
+from app.models.sport import Sport
+from app.models.series import Series
+from app.utils.engagement import increment_comment
+from app.schemas.comment import CommentCreate, CommentUpdate
+from typing import List, Optional
+from datetime import datetime
+
+async def add_comment(user_id: str, data: CommentCreate) -> Optional[Comment]:
+    """Ajouter un commentaire avec validation du contenu"""
+    # Pour le livestream, pas besoin de vérifier l'existence du contenu
+    if data.content_type != "livestream":
+        # Vérifier que le contenu existe
+        content = await _get_content(data.content_type, data.content_id)
+        
+        if not content:
+            return None
+    
+    comment = Comment(
+        user_id=user_id,
+        content_id=data.content_id,
+        content_type=data.content_type,
+        text=data.text
+    )
+    await comment.insert()
+    
+    # Pour livestream, on n'incrémente pas le compteur sur un modèle
+    if data.content_type != "livestream":
+        await increment_comment(data.content_type, data.content_id, 1)
+    
+    return comment
+
+
+CONTENT_MODELS = {
+    "movie": Movie,
+    "show": Show,
+    "breaking_news": BreakingNews,
+    "divertissement": Divertissement,
+    "reel": Reel,
+    "reportage": Reportage,
+    "jtandmag": JTandMag,
+    "popular_program": PopularPrograms,
+    "sport": Sport,
+    "series": Series
+}
+
+
+async def _get_content(content_type: str, content_id: str):
+    model = CONTENT_MODELS.get(content_type)
+    if not model:
+        return None
+    return await model.get(content_id)
+
+async def get_comment(comment_id: str) -> Optional[Comment]:
+    """Récupérer un commentaire par ID"""
+    return await Comment.get(comment_id)
+
+async def get_comments(content_id: str, content_type: str, skip: int = 0, limit: int = 50) -> List[dict]:
+    """Récupérer les commentaires d'un contenu avec infos utilisateur"""
+    comments = await Comment.find(
+        Comment.content_id == content_id,
+        Comment.content_type == content_type,
+        Comment.is_hidden == False
+    ).sort(-Comment.created_at).skip(skip).limit(limit).to_list()
+    
+    # Enrichir avec les infos utilisateur
+    enriched_comments = []
+    for comment in comments:
+        user = await User.get(comment.user_id)
+        comment_dict = comment.dict()
+        comment_dict['username'] = user.username if user else "Utilisateur inconnu"
+        enriched_comments.append(comment_dict)
+    
+    return enriched_comments
+
+async def get_user_comments(user_id: str, skip: int = 0, limit: int = 50) -> List[Comment]:
+    """Récupérer tous les commentaires d'un utilisateur"""
+    return await Comment.find(
+        Comment.user_id == user_id
+    ).sort(-Comment.created_at).skip(skip).limit(limit).to_list()
+
+async def update_comment(comment_id: str, user_id: str, data: CommentUpdate) -> Optional[Comment]:
+    """Mettre à jour un commentaire (seulement par l'auteur)"""
+    comment = await Comment.get(comment_id)
+    if not comment or comment.user_id != user_id:
+        return None
+    
+    comment.text = data.text
+    comment.updated_at = datetime.utcnow()
+    await comment.save()
+    return comment
+
+
+async def admin_update_comment(comment_id: str, data: CommentUpdate) -> Optional[Comment]:
+    """Mettre à jour un commentaire (admin)"""
+    comment = await Comment.get(comment_id)
+    if not comment:
+        return None
+    comment.text = data.text
+    comment.updated_at = datetime.utcnow()
+    await comment.save()
+    return comment
+
+
+async def moderate_comment(comment_id: str, is_hidden: bool, admin_id: str) -> Optional[Comment]:
+    """Masquer/afficher un commentaire (admin)"""
+    comment = await Comment.get(comment_id)
+    if not comment:
+        return None
+
+    comment.is_hidden = is_hidden
+    if is_hidden:
+        comment.hidden_at = datetime.utcnow()
+        comment.hidden_by = admin_id
+    else:
+        comment.hidden_at = None
+        comment.hidden_by = None
+
+    await comment.save()
+    return comment
+
+async def delete_comment(comment_id: str, user_id: str, is_admin: bool = False) -> bool:
+    """Supprimer un commentaire (auteur ou admin)"""
+    comment = await Comment.get(comment_id)
+    if not comment:
+        return False
+    
+    if comment.user_id != user_id and not is_admin:
+        return False
+    
+    content_id = comment.content_id
+    content_type = comment.content_type
+    await comment.delete()
+    
+    # Pour livestream, on n'incrémente pas le compteur sur un modèle
+    if content_type != "livestream":
+        await increment_comment(content_type, content_id, -1)
+    
+    return True
+
+async def count_comments(content_id: str, content_type: str) -> int:
+    """Compter les commentaires d'un contenu"""
+    return await Comment.find(
+        Comment.content_id == content_id,
+        Comment.content_type == content_type
+    ).count()
+
+async def get_all_comments(skip: int = 0, limit: int = 1000) -> List[dict]:
+    """Récupérer tous les commentaires (pour admin)"""
+    comments = await Comment.find().skip(skip).limit(limit).to_list()
+    
+    # Enrichir avec les infos utilisateur
+    enriched_comments = []
+    for comment in comments:
+        user = await User.get(comment.user_id)
+        comment_dict = comment.dict()
+        comment_dict['username'] = user.username if user else "Utilisateur inconnu"
+        enriched_comments.append(comment_dict)
+    
+    return enriched_comments
