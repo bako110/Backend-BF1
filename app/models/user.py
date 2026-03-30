@@ -24,6 +24,8 @@ class User(Document):
     
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
+    reset_token: Optional[str] = Field(None, description="Token de réinitialisation du mot de passe")
+    reset_token_expires: Optional[datetime] = Field(None, description="Expiration du token de réinitialisation")
 
     class Settings:
         name = "users"
