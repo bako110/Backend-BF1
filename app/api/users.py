@@ -2,10 +2,40 @@ from fastapi import APIRouter, HTTPException, Depends
 from app.utils.auth import get_current_user, get_admin_user
 from app.schemas.user import UserCreate, UserOut, UserLoginSchema, UserLocationUpdate
 from app.services.user_service import create_user, get_user, list_users, login_user_service, set_user_active, delete_user
+from app.models.user import User
 from typing import List
 from datetime import datetime
+from pydantic import BaseModel, EmailStr
+import secrets
 
 router = APIRouter()
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+@router.post("/forgot-password")
+async def forgot_password(data: ForgotPasswordRequest):
+    """
+    Demande de réinitialisation du mot de passe par email.
+    Retourne toujours 200 pour ne pas révéler l'existence d'un compte.
+    """
+    user = await User.find_one({"email": data.email})
+    if user:
+        # Générer un token sécurisé (32 bytes hex)
+        reset_token = secrets.token_urlsafe(32)
+        # Stocker le token en attendant l'envoi email (à connecter à un service email)
+        import datetime as dt
+        user.reset_token = reset_token
+        user.reset_token_expires = dt.datetime.utcnow() + dt.timedelta(hours=2)
+        await user.save()
+        # TODO: Envoyer l'email via votre service (SendGrid, SMTP, etc.)
+        # Exemple: await send_reset_email(user.email, reset_token)
+        print(f"[ForgotPassword] Token pour {user.email}: {reset_token}")
+
+    # Toujours 200 pour ne pas divulguer l'existence du compte
+    return {"message": "Si cet email est associé à un compte, vous recevrez un lien de réinitialisation."}
 
 @router.post("/register")
 async def register_user(user: UserCreate):
