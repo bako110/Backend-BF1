@@ -249,7 +249,7 @@ async def facebook_auth_redirect():
     params = {
         "client_id": FACEBOOK_APP_ID,
         "redirect_uri": FACEBOOK_REDIRECT_URI,
-        "scope": "email,public_profile",
+        "scope": "public_profile,email",
         "response_type": "code",
     }
     url = "https://www.facebook.com/v19.0/dialog/oauth?" + urllib.parse.urlencode(params)
