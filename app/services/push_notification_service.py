@@ -20,30 +20,24 @@ def _init_firebase():
         return True
     import os, json, base64, tempfile
 
-    # ── Priorité 1 : contenu JSON direct (Fly.io / prod) ────────────────────
-    json_str = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
-    if json_str:
-        try:
-            service_account_info = json.loads(json_str)
-            cred = credentials.Certificate(service_account_info)
-            firebase_admin.initialize_app(cred)
-            print("[OK] Firebase Admin SDK initialise (depuis variable env)")
-            return True
-        except Exception as e:
-            print(f"[ERREUR] Firebase (JSON env): {e}")
-            return False
-
-    # ── Priorité 2 : fichier local (dev) ─────────────────────────────────────
-    service_account_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH", "firebase-service-account.json")
-    if not os.path.isabs(service_account_path):
-        service_account_path = os.path.join(os.getcwd(), service_account_path)
-    if not os.path.exists(service_account_path):
-        print(f"[WARN] Firebase: fichier introuvable ({service_account_path})")
-        return False
+    # ── Credentials hardcodes ─────────────────────────────────────────────────
+    service_account_info = {
+        "type": "service_account",
+        "project_id": "bf1-tv-afb6a",
+        "private_key_id": "REDACTED",
+        "private_key": "REDACTED",
+        "client_email": "REDACTED",
+        "client_id": "REDACTED",
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+        "client_x509_cert_url": "REDACTED",
+        "universe_domain": "googleapis.com"
+    }
     try:
-        cred = credentials.Certificate(service_account_path)
+        cred = credentials.Certificate(service_account_info)
         firebase_admin.initialize_app(cred)
-        print("[OK] Firebase Admin SDK initialise (depuis fichier local)")
+        print("[OK] Firebase Admin SDK initialise")
         return True
     except Exception as e:
         print(f"[ERREUR] Initialisation Firebase: {e}")
