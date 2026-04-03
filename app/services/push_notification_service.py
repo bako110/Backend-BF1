@@ -4,12 +4,64 @@ import asyncio
 import aiohttp
 import json
 
+# ─── Firebase Admin SDK ───────────────────────────────────────────────────────
+try:
+    import firebase_admin
+    from firebase_admin import credentials, messaging as fcm_messaging
+    _firebase_available = True
+except ImportError:
+    _firebase_available = False
+
+def _init_firebase():
+    """Initialise Firebase Admin SDK si pas encore fait."""
+    if not _firebase_available:
+        return False
+    if firebase_admin._apps:
+        return True
+    import os, json, base64, tempfile
+
+    # ── Priorité 1 : contenu JSON encodé en base64 (Fly.io / prod) ──────────
+    json_b64 = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+    if json_b64:
+        try:
+            # Ajouter le padding manquant si necessaire
+            padded = json_b64 + '=' * (-len(json_b64) % 4)
+            json_str = base64.b64decode(padded).decode("utf-8")
+            service_account_info = json.loads(json_str)
+            cred = credentials.Certificate(service_account_info)
+            firebase_admin.initialize_app(cred)
+            print("[OK] Firebase Admin SDK initialise (depuis variable env)")
+            return True
+        except Exception as e:
+            print(f"[ERREUR] Firebase (base64): {e}")
+            return False
+
+    # ── Priorité 2 : fichier local (dev) ─────────────────────────────────────
+    service_account_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH", "firebase-service-account.json")
+    if not os.path.isabs(service_account_path):
+        service_account_path = os.path.join(os.getcwd(), service_account_path)
+    if not os.path.exists(service_account_path):
+        print(f"[WARN] Firebase: fichier introuvable ({service_account_path})")
+        return False
+    try:
+        cred = credentials.Certificate(service_account_path)
+        firebase_admin.initialize_app(cred)
+        print("[OK] Firebase Admin SDK initialise (depuis fichier local)")
+        return True
+    except Exception as e:
+        print(f"[ERREUR] Initialisation Firebase: {e}")
+        return False
+
+# Tenter l'initialisation au démarrage
+_firebase_ready = _init_firebase()
+
+
 class PushNotificationService:
     def __init__(self):
         # Configuration pour le service de notifications push
         self.fcm_server_key = None  # Clé FCM pour Firebase (si utilisé)
         # Plus besoin de mobile_app_url - on utilise WebSocket pour tout le monde
-        
+
     async def send_welcome_notification(self, user_id: str, username: str):
         """Envoyer une notification de bienvenue (déjà géré côté mobile)"""
         try:
@@ -18,11 +70,10 @@ class PushNotificationService:
         except Exception as e:
             print(f"❌ Erreur notification bienvenue: {e}")
             return False
-    
+
     async def send_popular_program_notification(self, program_data: dict):
         """Envoyer une notification pour un nouveau programme populaire"""
         try:
-            # Créer le message de notification
             notification = {
                 "title": "🌟 Nouveau Programme Populaire",
                 "body": f"{program_data.get('title', 'Nouveau programme')} est maintenant disponible !",
@@ -33,24 +84,22 @@ class PushNotificationService:
                     "description": program_data.get('description', '')
                 }
             }
-            
-            # Envoyer à tous les utilisateurs connectés
+
             success = await self._broadcast_notification(notification)
             if success:
                 print(f"✅ Notification programme populaire envoyée: {program_data.get('title')}")
-            
+
             return success
         except Exception as e:
             print(f"❌ Erreur notification programme populaire: {e}")
             return False
-    
+
     async def send_flash_info_notification(self, flash_info_data: dict):
         """Envoyer une notification pour un flash info"""
         try:
             print(f"📱 Préparation notification flash info...")
             print(f"📱 Données reçues: {flash_info_data}")
-            
-            # Créer le message de notification urgent
+
             notification = {
                 "title": "⚡ FLASH INFO",
                 "body": flash_info_data.get('title', flash_info_data.get('description', 'Dernière minute : une information importante vient d\'arriver')),
@@ -61,43 +110,106 @@ class PushNotificationService:
                     "description": flash_info_data.get('description', '')
                 }
             }
-            
+
             print(f"📱 Notification créée: {notification['title']}")
             print(f"📱 Corps: {notification['body']}")
-            
-            # Envoyer à tous les utilisateurs connectés
+
             success = await self._broadcast_notification(notification)
             if success:
                 print(f"✅ Notification flash info envoyée avec succès")
-            
+
             return success
         except Exception as e:
             print(f"❌ Erreur notification flash info: {e}")
             print(f"❌ Détails erreur: {str(e)}")
             return False
-    
+
     async def _broadcast_notification(self, notification: dict) -> bool:
-        """Diffuser une notification à tous les utilisateurs mobiles"""
+        """Diffuser une notification à tous les utilisateurs (WebSocket + FCM Firebase)"""
         try:
-            # Utiliser WebSocket pour les notifications en temps réel
+            # ── 1. WebSocket (onglets ouverts) ────────────────────────────────
             from app.services.websocket_service import websocket_manager
-            
+
             print(f"📱 Notification à diffuser: {notification['title']}")
             print(f"📱 Contenu: {notification['body']}")
             print(f"📱 Données: {notification['data']}")
-            
-            # Envoyer via WebSocket aux clients connectés
+
             await websocket_manager.send_notification(
                 notification_type=notification['data']['type'],
                 data=notification
             )
-            
+
+            # ── 2. FCM Firebase (onglets fermés / mobile) ─────────────────────
+            await self._send_fcm_to_all(notification)
+
             return True
-            
+
         except Exception as e:
             print(f"❌ Erreur diffusion notification: {e}")
             return False
-    
+
+    async def _send_fcm_to_all(self, notification: dict):
+        """Envoyer la notification FCM à tous les tokens enregistrés en base."""
+        if not _firebase_available or not firebase_admin._apps:
+            return
+
+        try:
+            from app.models.user import User
+            # Récupérer tous les tokens FCM non-vides
+            users = await User.find({"fcm_tokens": {"$exists": True, "$not": {"$size": 0}}}).to_list()
+            tokens = [t for u in users if u.fcm_tokens for t in u.fcm_tokens if t]
+
+            if not tokens:
+                print("📱 FCM: aucun token enregistré.")
+                return
+
+            data_payload = {k: str(v) for k, v in notification.get('data', {}).items()}
+
+            # Envoi par lots de 500 (limite FCM)
+            batch_size = 500
+            for i in range(0, len(tokens), batch_size):
+                batch = tokens[i:i + batch_size]
+                message = fcm_messaging.MulticastMessage(
+                    notification=fcm_messaging.Notification(
+                        title=notification['title'],
+                        body=notification['body'],
+                    ),
+                    data=data_payload,
+                    tokens=batch,
+                    webpush=fcm_messaging.WebpushConfig(
+                        notification=fcm_messaging.WebpushNotification(
+                            icon='/assets/images/logo.png',
+                        )
+                    ),
+                )
+                response = fcm_messaging.send_each_for_multicast(message)
+                print(f"✅ FCM: {response.success_count}/{len(batch)} envoyés, {response.failure_count} échoués")
+
+                # Nettoyer les tokens invalides
+                await self._cleanup_invalid_tokens(batch, response)
+
+        except Exception as e:
+            print(f"❌ Erreur envoi FCM: {e}")
+
+    async def _cleanup_invalid_tokens(self, tokens: list, response):
+        """Supprimer les tokens FCM invalides de la base."""
+        try:
+            from app.models.user import User
+            invalid_tokens = [
+                tokens[idx]
+                for idx, res in enumerate(response.responses)
+                if not res.success and res.exception and 'registration-token-not-registered' in str(res.exception)
+            ]
+            if not invalid_tokens:
+                return
+            users = await User.find({"fcm_tokens": {"$in": invalid_tokens}}).to_list()
+            for user in users:
+                user.fcm_tokens = [t for t in user.fcm_tokens if t not in invalid_tokens]
+                await user.save()
+            print(f"🧹 FCM: {len(invalid_tokens)} token(s) invalide(s) supprimé(s)")
+        except Exception as e:
+            print(f"❌ Erreur nettoyage tokens FCM: {e}")
+
     async def send_daily_news_notification(self, journal_type: str):
         """Envoyer les notifications quotidiennes pour les journaux"""
         try:
@@ -115,17 +227,17 @@ class PushNotificationService:
                     "title": "📺 Journal 19H30 est en direct !",
                     "body": "Le journal de 19H30 est en direct ! Toute l'actualité à ne pas manquer.",
                     "data": {
-                        "type": "daily_news", 
+                        "type": "daily_news",
                         "journal_type": "19h30"
                     }
                 }
             else:
                 return False
-            
+
             success = await self._broadcast_notification(notification)
             if success:
                 print(f"✅ Notification journal {journal_type} envoyée")
-            
+
             return success
         except Exception as e:
             print(f"❌ Erreur notification journal {journal_type}: {e}")
