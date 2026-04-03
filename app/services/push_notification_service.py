@@ -20,20 +20,17 @@ def _init_firebase():
         return True
     import os, json, base64, tempfile
 
-    # ── Priorité 1 : contenu JSON encodé en base64 (Fly.io / prod) ──────────
-    json_b64 = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
-    if json_b64:
+    # ── Priorité 1 : contenu JSON direct (Fly.io / prod) ────────────────────
+    json_str = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+    if json_str:
         try:
-            # Ajouter le padding manquant si necessaire
-            padded = json_b64 + '=' * (-len(json_b64) % 4)
-            json_str = base64.b64decode(padded).decode("utf-8")
             service_account_info = json.loads(json_str)
             cred = credentials.Certificate(service_account_info)
             firebase_admin.initialize_app(cred)
             print("[OK] Firebase Admin SDK initialise (depuis variable env)")
             return True
         except Exception as e:
-            print(f"[ERREUR] Firebase (base64): {e}")
+            print(f"[ERREUR] Firebase (JSON env): {e}")
             return False
 
     # ── Priorité 2 : fichier local (dev) ─────────────────────────────────────
