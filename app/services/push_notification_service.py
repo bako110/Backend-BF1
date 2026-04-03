@@ -20,28 +20,25 @@ def _init_firebase():
         return True
     import os, json, base64, tempfile
 
-    # ── Credentials hardcodes ─────────────────────────────────────────────────
-    service_account_info = {
-        "type": "service_account",
-        "project_id": "bf1-tv-afb6a",
-        "private_key_id": "REDACTED",
-        "private_key": "REDACTED",
-        "client_email": "REDACTED",
-        "client_id": "REDACTED",
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_x509_cert_url": "REDACTED",
-        "universe_domain": "googleapis.com"
-    }
-    try:
-        cred = credentials.Certificate(service_account_info)
-        firebase_admin.initialize_app(cred)
-        print("[OK] Firebase Admin SDK initialise")
-        return True
-    except Exception as e:
-        print(f"[ERREUR] Initialisation Firebase: {e}")
-        return False
+    # ── Fichier JSON (local ou Fly.io via volume/fichier copie) ──────────────
+    import os
+    candidates = [
+        os.path.join(os.getcwd(), "firebase-service-account.json"),
+        "/app/firebase-service-account.json",
+        "/etc/secrets/firebase-service-account.json",
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            try:
+                cred = credentials.Certificate(path)
+                firebase_admin.initialize_app(cred)
+                print(f"[OK] Firebase Admin SDK initialise depuis {path}")
+                return True
+            except Exception as e:
+                print(f"[ERREUR] Initialisation Firebase: {e}")
+                return False
+    print("[WARN] Firebase: fichier firebase-service-account.json introuvable")
+    return False
 
 # Tenter l'initialisation au démarrage
 _firebase_ready = _init_firebase()
