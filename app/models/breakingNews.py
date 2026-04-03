@@ -12,6 +12,8 @@ class BreakingNews(Document):
     image: Optional[HttpUrl] = Field(None, description="URL de l'image")
     author: str = Field(..., description="Auteur de l'article")
     allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
+    views: int = Field(default=0, description="Nombre de vues")
+    likes: int = Field(default=0, description="Nombre de likes")
 
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Date de création")
     updated_at: Optional[datetime] = Field(None, description="Date de mise à jour")

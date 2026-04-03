@@ -43,6 +43,7 @@ class JTandMagUpdate(BaseModel):
 class JTandMagOut(JTandMagBase):
     id: str
     views: int = Field(0, ge=0, description="Nombre de vues")
+    likes: int = Field(0, ge=0, description="Nombre de likes")
     created_at: datetime
     updated_at: Optional[datetime] = None
 

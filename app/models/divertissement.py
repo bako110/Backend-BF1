@@ -14,6 +14,7 @@ class Divertissement(Document):
 
     duration_minutes: Optional[int] = Field(default=30, description="Durée en minutes")
     views: int = Field(default=0, description="Nombre de vues")
+    likes: int = Field(default=0, description="Nombre de likes")
     rating: float = Field(default=0, ge=0, le=5, description="Note du divertissement (0 à 5)")
 
     published_at: Optional[datetime] = Field(None, description="Date de publication")

@@ -19,6 +19,7 @@ class Reportage(Document):
     allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
     views: int = Field(default=0, description="Nombre de vues")
+    likes: int = Field(default=0, description="Nombre de likes")
     rating: float = Field(default=0, ge=0, le=5, description="Note du reportage (0 à 5)")
 
     aired_at: datetime = Field(..., description="Date de diffusion originale")

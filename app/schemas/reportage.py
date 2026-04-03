@@ -43,6 +43,7 @@ class ReportageUpdate(BaseModel):
 class ReportageOut(ReportageBase):
     id: str
     views: int = Field(0, ge=0, description="Nombre de vues")
+    likes: int = Field(0, ge=0, description="Nombre de likes")
     rating: float = Field(0, ge=0, le=5, description="Note du reportage (0 à 5)")
     created_at: datetime
     updated_at: Optional[datetime] = None

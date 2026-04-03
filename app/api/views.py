@@ -15,6 +15,7 @@ from app.models.archive import Archive
 from app.models.movie import Movie
 from app.models.reel import Reel
 from app.models.sport import Sport
+from app.models.breakingNews import BreakingNews
 
 router = APIRouter()
 
@@ -33,6 +34,8 @@ MODEL_MAP = {
     'reel': Reel,
     'sport': Sport,
     'sports': Sport,
+    'breaking_news': BreakingNews,
+    'news': BreakingNews,
 }
 
 
