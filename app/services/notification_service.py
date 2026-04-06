@@ -71,6 +71,49 @@ async def delete_all_notifications(user_id: str) -> int:
 		print(f"❌ [NotificationService] Erreur delete_all_notifications: {e}")
 		return 0
 
+# ============ NOTIFICATIONS ADMIN ============
+
+async def send_global_notification(title: str, message: str, category: Optional[str] = None) -> int:
+	"""Envoyer une notification globale à tous les utilisateurs"""
+	try:
+		users = await User.find_all().to_list()
+		count = 0
+		for user in users:
+			notification = Notification(
+				user_id=str(user.id),
+				title=title,
+				message=message,
+				category=category or "admin",
+				is_read=False
+			)
+			await notification.insert()
+			count += 1
+		print(f"✅ [NotificationService] Notification globale envoyée à {count} utilisateurs")
+		return count
+	except Exception as e:
+		print(f"❌ [NotificationService] Erreur notification globale: {e}")
+		return 0
+
+async def send_individual_notification(user_id: str, title: str, message: str, category: Optional[str] = None) -> Optional[Notification]:
+	"""Envoyer une notification à un utilisateur spécifique"""
+	try:
+		user = await User.get(user_id)
+		if not user:
+			return None
+		notification = Notification(
+			user_id=user_id,
+			title=title,
+			message=message,
+			category=category or "admin",
+			is_read=False
+		)
+		await notification.insert()
+		print(f"✅ [NotificationService] Notification individuelle envoyée à {user_id}")
+		return notification
+	except Exception as e:
+		print(f"❌ [NotificationService] Erreur notification individuelle: {e}")
+		return None
+
 # ============ NOTIFICATIONS AUTOMATIQUES ============
 
 async def send_welcome_notification(user_id: str, username: str):

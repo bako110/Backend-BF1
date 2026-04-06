@@ -1,15 +1,30 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.utils.auth import get_current_user, get_admin_user
-from app.schemas.notification import NotificationCreate, NotificationOut
-from app.services.notification_service import create_notification, get_notification, list_notifications, mark_as_read, delete_notification, mark_all_as_read, delete_all_notifications
+from app.schemas.notification import NotificationCreate, NotificationOut, AdminNotificationGlobal, AdminNotificationIndividual
+from app.services.notification_service import (
+	create_notification, get_notification, list_notifications, mark_as_read,
+	delete_notification, mark_all_as_read, delete_all_notifications,
+	send_global_notification, send_individual_notification
+)
 from typing import List
 
 router = APIRouter()
 
-@router.post("", response_model=NotificationOut)
-async def add_notification(notification: NotificationCreate, current_user=Depends(get_admin_user)):
-	"""Créer une notification (admin ou broadcast)"""
-	return await create_notification(notification)
+# ─── Endpoints Admin ──────────────────────────────────────────────────────────
+
+@router.post("/admin/global", tags=["Admin - Notifications"])
+async def admin_send_global(body: AdminNotificationGlobal, current_user=Depends(get_admin_user)):
+	"""[ADMIN] Envoyer une notification à TOUS les utilisateurs"""
+	count = await send_global_notification(body.title, body.message, body.category)
+	return {"ok": True, "sent_to": count}
+
+@router.post("/admin/individual", response_model=NotificationOut, tags=["Admin - Notifications"])
+async def admin_send_individual(body: AdminNotificationIndividual, current_user=Depends(get_admin_user)):
+	"""[ADMIN] Envoyer une notification à un utilisateur spécifique"""
+	notif = await send_individual_notification(body.user_id, body.title, body.message, body.category)
+	if not notif:
+		raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+	return notif
 
 @router.get("/me", response_model=List[NotificationOut])
 async def get_my_notifications(current_user=Depends(get_current_user)):

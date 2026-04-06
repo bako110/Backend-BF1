@@ -30,6 +30,7 @@ from app.models.series import Series, Season, Episode
 from app.models.carousel import CarouselItem
 from app.models.tele_realite import TeleRealite
 from app.models.section_category import SectionCategory
+from app.models.view_log import ViewLog
 from app.api.contact import ContactMessageDoc
 from app.models import enums
 from dotenv import load_dotenv
@@ -48,6 +49,6 @@ async def init_db():
             Program, LiveChannel, ProgramReminder, UserSettings, SupportTicket, FAQ, AppInfo, TeamMember, Archive,
             ArchivePurchase, PaymentMethod, RecordingSession, Sport, EmissionCategory, ContactMessageDoc,
             Series, Season, Episode, CarouselItem,
-            TeleRealite, SectionCategory,
+            TeleRealite, SectionCategory, ViewLog,
         ]
     )

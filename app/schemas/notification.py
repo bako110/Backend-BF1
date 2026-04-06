@@ -11,6 +11,14 @@ class NotificationBase(BaseModel):
 class NotificationCreate(NotificationBase):
 	user_id: Optional[str] = Field(None, description="ID utilisateur (None = broadcast)")
 
+class AdminNotificationGlobal(NotificationBase):
+	"""Notification envoyée à TOUS les utilisateurs"""
+	pass
+
+class AdminNotificationIndividual(NotificationBase):
+	"""Notification envoyée à un utilisateur spécifique"""
+	user_id: str = Field(..., description="ID de l'utilisateur cible")
+
 class NotificationOut(NotificationBase):
 	id: str
 	user_id: Optional[str] = None

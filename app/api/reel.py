@@ -1,11 +1,13 @@
-from fastapi import APIRouter, HTTPException, Depends, Request
-from typing import List
+from fastapi import APIRouter, HTTPException, Depends, Request, Query
+from typing import List, Optional
 from pydantic import BaseModel, Field, ValidationError
 from app.utils.auth import get_admin_user, get_optional_user, get_current_user
 from app.schemas.reel import ReelCreate, ReelUpdate, ReelOut
 from app.schemas.comment import CommentCreate, CommentOut
 from app.services.reel_service import (
-	create_reel, get_reel, list_reels, update_reel, delete_reel, increment_reel_view
+	create_reel, get_reel, list_reels, update_reel, delete_reel,
+	track_reel_watch, increment_reel_save, increment_reel_recent_like,
+	increment_reel_recent_share
 )
 from app.services import like_service, comment_service, share_service
 
@@ -57,11 +59,16 @@ async def add_reel(request: Request, current_user=Depends(get_admin_user)):
 async def get_all_reels(
 	page: int = 1,
 	limit: int = 20,
+	seen_ids: Optional[str] = Query(None, description="IDs déjà vus, séparés par virgule"),
 	current_user=Depends(get_optional_user)
 ):
-	# Convertir page en skip pour la pagination
+	"""
+	Liste les reels triés par score de recommandation.
+	Passer seen_ids=id1,id2,id3 pour diversifier le feed (éviter les reels déjà vus).
+	"""
 	skip = (page - 1) * limit
-	return await list_reels(skip, limit)
+	seen_list = seen_ids.split(",") if seen_ids else []
+	return await list_reels(skip, limit, seen_list)
 
 
 @router.get("/{reel_id}", response_model=ReelOut)
@@ -72,16 +79,35 @@ async def get_one_reel(reel_id: str, current_user=Depends(get_optional_user)):
 	return reel
 
 
+class WatchData(BaseModel):
+	watch_seconds: float = Field(default=0.0, ge=0, description="Secondes regardées")
+	completed: bool = Field(default=False, description="A-t-il regardé jusqu'au bout ?")
+
 @router.post("/{reel_id}/view")
-async def track_reel_view(reel_id: str, current_user=Depends(get_optional_user)):
+async def track_reel_view(
+	reel_id: str,
+	request: Request,
+	data: WatchData = WatchData(),
+	current_user=Depends(get_optional_user)
+):
 	"""
-	Incrémenter le compteur de vues quand un utilisateur commence à regarder un reel
-	Peut être appelé par des utilisateurs connectés ou non
+	Enregistre une session de visionnage.
+	- watch_seconds : durée regardée en secondes
+	- completed     : true si l'utilisateur a fini le reel
+	Anti-doublon 24h sur les vues uniques.
 	"""
-	success = await increment_reel_view(reel_id)
+	user_id = str(current_user.id) if current_user else None
+	client_ip = request.client.host if request.client else None
+	success = await track_reel_watch(
+		reel_id=reel_id,
+		watch_seconds=data.watch_seconds,
+		completed=data.completed,
+		user_id=user_id,
+		client_ip=client_ip
+	)
 	if not success:
 		raise HTTPException(status_code=404, detail="Reel not found")
-	return {"success": True, "message": "View tracked"}
+	return {"success": True}
 
 
 @router.patch("/{reel_id}", response_model=ReelOut)
@@ -107,14 +133,11 @@ async def like_reel(reel_id: str, current_user=Depends(get_current_user)):
 	"""Liker un reel"""
 	try:
 		from app.schemas.like import LikeCreate
-		like_data = LikeCreate(
-			content_id=reel_id,
-			content_type="reel"
-		)
-		result = await like_service.toggle_like(
-			user_id=str(current_user.id),
-			data=like_data
-		)
+		like_data = LikeCreate(content_id=reel_id, content_type="reel")
+		result = await like_service.toggle_like(user_id=str(current_user.id), data=like_data)
+		# Mettre à jour les métriques récentes pour le trending
+		if result.get("action") == "liked":
+			await increment_reel_recent_like(reel_id)
 		return result
 	except Exception as e:
 		raise HTTPException(status_code=400, detail=str(e))
@@ -199,18 +222,12 @@ async def share_reel(reel_id: str, current_user=Depends(get_current_user)):
 	"""Partager un reel"""
 	try:
 		from app.schemas.share import ShareCreate
-		share_data = ShareCreate(
-			content_id=reel_id,
-			content_type="reel",
-			platform="app",
-			message=None
-		)
-		result = await share_service.create_share(
-			user_id=str(current_user.id),
-			data=share_data
-		)
+		share_data = ShareCreate(content_id=reel_id, content_type="reel", platform="app", message=None)
+		result = await share_service.create_share(user_id=str(current_user.id), data=share_data)
 		if not result:
 			raise HTTPException(status_code=404, detail="Reel not found")
+		# Mettre à jour les métriques récentes pour le trending
+		await increment_reel_recent_share(reel_id)
 		return {"success": True, "message": "Reel partagé avec succès"}
 	except Exception as e:
 		raise HTTPException(status_code=400, detail=str(e))

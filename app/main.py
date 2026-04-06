@@ -173,12 +173,6 @@ api_v1_router.include_router(carousel.router, prefix="/carousel", tags=["Carouse
 api_v1_router.include_router(section_categories.router, prefix="/section-categories", tags=["Section Categories"])
 api_v1_router.include_router(emission_categories.router, prefix="/emission-categories", tags=["Emission Categories"])
 
-# ─── 5. Abonnements & Paiements ───────────────────────────────────────────────
-api_v1_router.include_router(subscriptions.router, prefix="/subscriptions", tags=["Subscriptions"])
-api_v1_router.include_router(subscription_plans.router, prefix="/subscription-plans", tags=["Subscription Plans"])
-api_v1_router.include_router(payments.router, prefix="/payments", tags=["Payments"])
-api_v1_router.include_router(premium.router, prefix="/premium", tags=["Premium"])
-
 # ─── 6. Support & Informations ────────────────────────────────────────────────
 api_v1_router.include_router(support.router, prefix="/support", tags=["Support"])
 api_v1_router.include_router(contact.router, prefix="/contact", tags=["Contact"])

@@ -34,22 +34,23 @@ class ReelCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="Titre de la vidéo")
     description: Optional[str] = Field(None, description="Description de la vidéo")
     allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
+    duration: Optional[float] = Field(None, description="Durée en secondes")
+    thumbnail_url: Optional[str] = Field(None, description="URL de la miniature")
+    tags: Optional[list] = Field(default_factory=list, description="Tags")
 
     class Config:
-        extra = "ignore"  # Ignorer les champs supplémentaires
+        extra = "ignore"
 
     @validator("video_url", pre=True)
     def validate_video_url(cls, v):
         if v == "" or v is None:
             return None
-        # Accepter toutes les URLs valides (Cloudinary, YouTube, etc.)
         if isinstance(v, str) and (v.startswith("http://") or v.startswith("https://")):
             return v
         return None
-    
+
     @validator("description", pre=True)
     def validate_description(cls, v):
-        # Convertir les chaînes vides en None
         if v == "":
             return None
         return v
@@ -77,6 +78,13 @@ class ReelUpdate(BaseModel):
 
 class ReelOut(ReelBase):
     id: str
+    views: int = 0
+    saves: int = 0
+    watch_completions: int = 0
+    trending_score: float = 0.0
+    duration: Optional[float] = None
+    thumbnail_url: Optional[str] = None
+    tags: list = Field(default_factory=list)
     created_at: datetime
     updated_at: Optional[datetime] = None
 

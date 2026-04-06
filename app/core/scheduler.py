@@ -79,6 +79,15 @@ async def sync_user_categories_job():
         print(f"❌ Erreur lors de la synchronisation des catégories: {e}")
 
 
+async def reset_reel_recent_metrics_job():
+    """Remet à zéro les métriques récentes des reels pour la fenêtre trending 48h."""
+    try:
+        from app.services.reel_service import reset_recent_metrics
+        await reset_recent_metrics()
+    except Exception as e:
+        print(f"❌ Erreur reset_reel_recent_metrics_job: {e}")
+
+
 async def send_program_reminders_job():
     """
     Tache planifiee : envoie les rappels de programmes dus dans la prochaine minute.
@@ -249,11 +258,21 @@ def start_scheduler():
         replace_existing=True
     )
 
+    # Reset métriques récentes des reels : toutes les 48h (fenêtre glissante trending)
+    scheduler.add_job(
+        reset_reel_recent_metrics_job,
+        CronTrigger(hour=3, minute=0),   # Toutes les nuits à 3h
+        id='reset_reel_recent_metrics',
+        name='Reset métriques récentes des reels',
+        replace_existing=True
+    )
+
     scheduler.start()
     print("✅ Scheduler démarré - Tâches planifiées:")
     print("   📅 Désactivation abonnements expirés: Toutes les heures")
     print("   🔄 Synchronisation catégories: Toutes les 6 heures")
     print("   🔔 Rappels de programmes: Toutes les minutes")
+    print("   📊 Reset métriques trending reels: Toutes les nuits à 3h")
     print("   🚀 Première exécution: Immédiatement au démarrage")
 
 
