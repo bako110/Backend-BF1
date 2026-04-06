@@ -75,104 +75,46 @@ class SportService:
         category: Optional[str] = None,
         featured: Optional[bool] = None,
         is_new: Optional[bool] = None,
-        page: int = 1,
-        per_page: int = 20
+        skip: int = 0,
+        limit: int = 20
     ) -> Dict[str, Any]:
         """
         Récupère tous les sports avec filtres et pagination
         """
         try:
-            print(f"📋 Récupération des sports - page: {page}, per_page: {per_page}")
-            
-            # Vérifier si la collection est initialisée
-            try:
-                # Test simple pour voir si la collection fonctionne
-                test_count = await Sport.find({}).count()
-                print(f"📊 Test collection: {test_count} sports trouvés")
-            except Exception as collection_error:
-                print(f"❌ Erreur de collection: {collection_error}")
-                # La collection n'est pas initialisée, retourner vide
-                return {
-                    "sports": [],
-                    "total": 0,
-                    "page": page,
-                    "per_page": per_page,
-                    "total_pages": 0
-                }
-            
             # Construire le filtre
             filter_dict = {"is_active": True}
-            
+
             if category and category != "toutes":
                 filter_dict["category"] = category
-            
             if featured is not None:
                 filter_dict["featured"] = featured
-            
             if is_new is not None:
                 filter_dict["is_new"] = is_new
 
-            print(f"🔍 Filtre appliqué: {filter_dict}")
-
-            # Récupérer les sports
-            sports = []
-            try:
-                # Trier par created_at
-                sports = await Sport.find(filter_dict).sort("-created_at").skip((page - 1) * per_page).limit(per_page).to_list()
-                print(f"✅ Sports récupérés avec tri: {len(sports)}")
-            except Exception as sort_error:
-                print(f"⚠️ Erreur de tri: {sort_error}")
-                try:
-                    # Essayer sans tri
-                    sports = await Sport.find(filter_dict).skip((page - 1) * per_page).limit(per_page).to_list()
-                    print(f"✅ Sports récupérés sans tri: {len(sports)}")
-                except Exception as fetch_error:
-                    print(f"❌ Erreur de récupération: {fetch_error}")
-                    sports = []
-            
-            # Debug : afficher la structure des sports
-            if sports:
-                print(f"📋 Structure d'un sport: {list(sports[0].dict().keys())}")
-                print(f"🆔 ID du premier sport: {sports[0].dict().get('id')}")
-                print(f"🆔 ID Beanie du premier sport: {sports[0].id}")
-                print(f"🆔 ID Beanie (type): {type(sports[0].id)}")
-            else:
-                print("📭 Aucun sport trouvé dans la base de données")
-            
             # Compter le total
-            total = 0
             try:
                 total = await Sport.find(filter_dict).count()
-                print(f"📊 Total de sports: {total}")
-            except Exception as count_error:
-                print(f"❌ Erreur de comptage: {count_error}")
-                total = len(sports)  # Utiliser la longueur de la liste récupérée
+            except Exception:
+                total = 0
 
-            result = {
-                "sports": [
-                    SportResponse.from_orm(sport) 
-                    for sport in sports
-                ],
-            }
-            
-            # Debug : vérifier le premier résultat
-            if result["sports"]:
-                first_sport = result["sports"][0]
-                print(f"🔍 Premier sport dans le résultat:")
-                print(f"  id: {first_sport.id}")
-                print(f"  titre: {first_sport.title}")
-                print(f"  type id: {type(first_sport.id)}")
-            
-            result.update({
+            # Récupérer les sports avec skip/limit
+            sports = []
+            try:
+                sports = await Sport.find(filter_dict).sort("-created_at").skip(skip).limit(limit).to_list()
+            except Exception:
+                try:
+                    sports = await Sport.find(filter_dict).skip(skip).limit(limit).to_list()
+                except Exception:
+                    sports = []
+
+            return {
+                "items": [SportResponse.from_orm(sport) for sport in sports],
                 "total": total,
-                "page": page,
-                "per_page": per_page,
-                "total_pages": (total + per_page - 1) // per_page if total > 0 else 0
-            })
-            
-            print(f"📤 Résultat retourné: {len(result['sports'])} sports, total: {result['total']}")
-            return result
-            
+                "skip": skip,
+                "limit": limit,
+            }
+
         except Exception as e:
             print(f"❌ Erreur globale dans get_all_sports: {e}")
             import traceback

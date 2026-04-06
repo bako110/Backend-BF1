@@ -84,12 +84,13 @@ def calculate_reel_score(reel: dict) -> float:
 	return final_score
 
 
-async def list_reels(skip: int = 0, limit: int = 50) -> List[Reel]:
+async def list_reels(skip: int = 0, limit: int = 20) -> dict:
 	try:
-		# Récupérer TOUS les reels (on va les trier après)
-		# On en prend plus que demandé pour avoir un bon pool à trier
+		total = await Reel.find_all().count()
+
+		# Récupérer TOUS les reels pour le scoring (on en prend plus que demandé)
 		fetch_limit = max(limit * 3, 150)  # 3x le limit pour avoir du choix
-		
+
 		reels = await Reel.find_all().sort(-Reel.created_at).limit(fetch_limit).to_list()
 		
 		# Convertir en dict et calculer le score
@@ -114,8 +115,8 @@ async def list_reels(skip: int = 0, limit: int = 50) -> List[Reel]:
 		
 		# Retourner seulement les dicts (sans le score)
 		result = [reel for score, reel in paginated_reels]
-		
-		return result
+
+		return {"items": result, "total": total, "skip": skip, "limit": limit}
 	except Exception as e:
 		print(f"❌ Erreur list_reels: {str(e)}")
 		return []

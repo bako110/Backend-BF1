@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from typing import Dict, Any
 from app.utils.auth import get_admin_user
 from app.models.user import User
-from app.models.show import Show
 from app.models.movie import Movie
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
@@ -12,12 +11,12 @@ from app.models.divertissement import Divertissement
 from app.models.program import Program
 from app.models.breakingNews import BreakingNews
 from app.models.reel import Reel
-from app.models.popularPrograms import PopularPrograms
 from app.models.comment import Comment
 from app.models.subscription import Subscription
 from app.models.like import Like
 from app.models.favorite import Favorite
 from app.models.sport import Sport
+from app.models.tele_realite import TeleRealite
 
 router = APIRouter()
 
@@ -86,7 +85,6 @@ async def get_dashboard_stats():
     # Exécuter tous les calculs en parallèle pour améliorer les performances
     results = await asyncio.gather(
         safe_calculate_growth(User),
-        safe_calculate_growth(Show),
         safe_calculate_growth(Movie),
         safe_calculate_growth(Reportage),
         safe_calculate_growth(Reel),
@@ -94,30 +92,29 @@ async def get_dashboard_stats():
         safe_calculate_growth(Program),
         safe_calculate_growth(BreakingNews),
         safe_calculate_growth(JTandMag),
-        safe_calculate_growth(PopularPrograms),
         safe_calculate_growth(Subscription),
         safe_calculate_growth(Comment),
         safe_calculate_growth(Like),
         safe_calculate_growth(Favorite),
         safe_calculate_growth(Sport),
+        safe_calculate_growth(TeleRealite),
     )
-    
+
     stats = {
         "users": results[0],
-        "shows": results[1],
-        "movies": results[2],
-        "reportages": results[3],
-        "reels": results[4],
-        "divertissements": results[5],
-        "programs": results[6],
-        "news": results[7],
-        "jtandmag": results[8],
-        "popularPrograms": results[9],
-        "subscriptions": results[10],
-        "comments": results[11],
-        "likes": results[12],
-        "favorites": results[13],
-        "sports": results[14],
+        "movies": results[1],
+        "reportages": results[2],
+        "reels": results[3],
+        "divertissements": results[4],
+        "programs": results[5],
+        "news": results[6],
+        "jtandmag": results[7],
+        "subscriptions": results[8],
+        "comments": results[9],
+        "likes": results[10],
+        "favorites": results[11],
+        "sports": results[12],
+        "tele_realite": results[13],
     }
     
     return stats

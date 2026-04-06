@@ -41,3 +41,7 @@ class UserLocationUpdate(BaseModel):
     is_in_country: Optional[bool] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+
+class FcmTokenUpdate(BaseModel):
+    fcm_token: str
+    platform: Optional[str] = "web"  # web, android, ios

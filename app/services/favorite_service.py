@@ -1,31 +1,31 @@
 from app.models.favorite import Favorite
 from app.models.movie import Movie
-from app.models.show import Show
 from app.models.breakingNews import BreakingNews
 from app.models.divertissement import Divertissement
 from app.models.reel import Reel
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
-from app.models.popularPrograms import PopularPrograms
 from app.models.sport import Sport
 from app.models.emission_category import EmissionCategory
 from app.models.series import Series
+from app.models.archive import Archive
+from app.models.tele_realite import TeleRealite
 from app.schemas.favorite import FavoriteCreate
 from typing import List, Optional, Dict
 
 
 CONTENT_MODELS = {
 	"movie": Movie,
-	"show": Show,
 	"breaking_news": BreakingNews,
 	"divertissement": Divertissement,
 	"reel": Reel,
 	"reportage": Reportage,
 	"jtandmag": JTandMag,
-	"popular_program": PopularPrograms,
 	"sport": Sport,
 	"emission_category": EmissionCategory,
-	"series": Series
+	"series": Series,
+	"archive": Archive,
+	"tele_realite": TeleRealite,
 }
 
 

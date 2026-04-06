@@ -1,7 +1,6 @@
 # API modules for BF1 TV Backend
 
 from . import (
-    shows,
     movies, 
     users,
     favorites,
@@ -18,7 +17,6 @@ from . import (
     reel,
     reportage,
     divertissement,
-    popularPrograms,
     shares,
     programs,
     stats,
@@ -31,7 +29,6 @@ from . import (
     subscription_plans,
     websocket,
     upload,
-    categories
 )
 
 __all__ = [
@@ -52,7 +49,6 @@ __all__ = [
     'reel',
     'reportage',
     'divertissement',
-    'popularPrograms',
     'shares',
     'programs',
     'stats',

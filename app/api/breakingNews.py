@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from app.utils.auth import get_admin_user, get_optional_user
 from app.schemas.breakingNews import BreakingNewsCreate, BreakingNewsOut, BreakingNewsUpdate
 from app.services.breakinkNews_service import create_news, get_news, list_news, update_news, delete_news
@@ -28,27 +28,26 @@ async def add_news(news: BreakingNewsCreate, current_user=Depends(get_admin_user
 	
 	return new_news
 
-@router.get("", response_model=List[BreakingNewsOut])
+@router.get("")
 async def get_all_news(
-	skip: int = 0,
-	limit: int = 50,
+	skip: int = Query(0, ge=0),
+	limit: int = Query(20, ge=1, le=500),
 	search: str = None,
 	current_user=Depends(get_optional_user)
 ):
 	"""Lister les breaking news avec pagination et recherche optionnelle"""
-	news_list = await list_news(skip, limit)
-	
-	# Si un terme de recherche est fourni, filtrer les résultats
+	from app.models.breakingNews import BreakingNews as BNModel
+	query = {}
 	if search:
-		search_lower = search.lower()
-		news_list = [
-			news for news in news_list
-			if search_lower in news.title.lower() or
-			   (news.description and search_lower in news.description.lower()) or
-			   (news.category and search_lower in news.category.lower())
+		search_lower = search.strip()
+		query["$or"] = [
+			{"title": {"$regex": search_lower, "$options": "i"}},
+			{"description": {"$regex": search_lower, "$options": "i"}},
+			{"category": {"$regex": search_lower, "$options": "i"}},
 		]
-	
-	return news_list
+	total = await BNModel.find(query).count()
+	items = await BNModel.find(query).sort(-BNModel.created_at).skip(skip).limit(limit).to_list()
+	return {"items": items, "total": total, "skip": skip, "limit": limit}
 
 @router.get("/{news_id}", response_model=BreakingNewsOut)
 async def get_one_news(news_id: str, current_user=Depends(get_optional_user)):

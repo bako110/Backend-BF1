@@ -192,9 +192,10 @@ async def get_faq(faq_id: str):
     if not faq:
         raise HTTPException(status_code=404, detail="FAQ non trouvée")
     
-    # Incrémenter le compteur de vues
-    faq.views += 1
-    await faq.save()
+    # Incrémentation atomique du compteur de vues
+    await FAQ.find_one({"_id": faq.id}).update({"$inc": {"views": 1}})
+    # Recharger la FAQ pour retourner la valeur à jour
+    faq = await FAQ.get(faq_id)
     
     return faq
 

@@ -57,8 +57,10 @@ class ArchiveUpdate(BaseModel):
 class ArchiveOut(ArchiveBase):
     id: str
     views: int
+    likes: int = 0
     rating: float
     rating_count: int
+    
     purchases_count: int
     popularity_score: float
     is_active: bool

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse
 from app.utils.auth import get_current_user, get_admin_user
-from app.schemas.user import UserCreate, UserOut, UserLoginSchema, UserLocationUpdate
+from app.schemas.user import UserCreate, UserOut, UserLoginSchema, UserLocationUpdate, FcmTokenUpdate
 from app.services.user_service import create_user, get_user, list_users, login_user_service, set_user_active, delete_user
 from app.models.user import User
 from typing import List
@@ -110,6 +110,37 @@ async def update_user_location(location: UserLocationUpdate, current_user=Depend
     print(f"✅ [API] Localisation enregistrée pour {current_user.username}")
     
     return current_user
+
+@router.post("/fcm-token")
+async def save_fcm_token(body: FcmTokenUpdate, current_user=Depends(get_current_user)):
+    """Enregistrer ou mettre à jour le token FCM Firebase de l'utilisateur"""
+    token = body.fcm_token.strip()
+    if not token:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Token FCM invalide")
+
+    # Ajouter le token s'il n'est pas déjà présent (évite les doublons)
+    if not hasattr(current_user, 'fcm_tokens') or current_user.fcm_tokens is None:
+        current_user.fcm_tokens = []
+    if token not in current_user.fcm_tokens:
+        current_user.fcm_tokens.append(token)
+        current_user.updated_at = datetime.utcnow()
+        await current_user.save()
+        print(f"✅ Token FCM enregistré pour {current_user.username} [{body.platform}]")
+
+    return {"status": "ok"}
+
+
+@router.delete("/fcm-token")
+async def remove_fcm_token(body: FcmTokenUpdate, current_user=Depends(get_current_user)):
+    """Supprimer un token FCM (déconnexion / désactivation des notifs)"""
+    token = body.fcm_token.strip()
+    if hasattr(current_user, 'fcm_tokens') and current_user.fcm_tokens:
+        current_user.fcm_tokens = [t for t in current_user.fcm_tokens if t != token]
+        current_user.updated_at = datetime.utcnow()
+        await current_user.save()
+    return {"status": "ok"}
+
 
 @router.get("/me/location")
 async def get_user_location(current_user=Depends(get_current_user)):
@@ -225,17 +256,18 @@ async def google_auth_callback(code: str = None, error: str = None):
             "is_active": user.is_active,
         })
 
-        redirect_url = (
-            f"{FRONTEND_URL}/pages/auth-callback.html"
+        # Rediriger vers le deep link de l'app mobile : bf1tv://oauth/callback?token=xxx
+        # Android intercepte ce schéma via onNewIntent dans MainActivity
+        deep_link = (
+            f"bf1tv://oauth/callback"
             f"?token={urllib.parse.quote(bf1_token)}"
             f"&user={urllib.parse.quote(user_data)}"
         )
-        return RedirectResponse(url=redirect_url)
+        return RedirectResponse(url=deep_link)
 
     except Exception as exc:
         print(f"[GoogleOAuth] Erreur callback: {exc}")
-        error_url = f"{FRONTEND_URL}/pages/connexion.html?auth_error=server_error"
-        return RedirectResponse(url=error_url)
+        return RedirectResponse(url="bf1tv://oauth/callback?error=server_error")
 
 
 # Facebook OAuth 2.0

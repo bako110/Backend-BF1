@@ -3,7 +3,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 from app.models.movie import Movie
 from app.models.user import User
-from app.models.show import Show
 from app.models.favorite import Favorite
 from app.models.like import Like
 from app.models.comment import Comment
@@ -13,7 +12,6 @@ from app.models.subscription import Subscription
 from app.models.message import Message
 from app.models.subscription_plan import SubscriptionPlan
 from app.models.divertissement import Divertissement
-from app.models.popularPrograms import PopularPrograms
 from app.models.reel import Reel
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
@@ -26,10 +24,12 @@ from app.models.archive import Archive
 from app.models.archive_purchase import ArchivePurchase
 from app.models.payment_method import PaymentMethod
 from app.models.recording import RecordingSession
-from app.models.category import Category
 from app.models.sport import Sport
 from app.models.emission_category import EmissionCategory
 from app.models.series import Series, Season, Episode
+from app.models.carousel import CarouselItem
+from app.models.tele_realite import TeleRealite
+from app.models.section_category import SectionCategory
 from app.api.contact import ContactMessageDoc
 from app.models import enums
 from dotenv import load_dotenv
@@ -43,10 +43,11 @@ async def init_db():
     await init_beanie(
         database=client[db_name],
         document_models=[
-            Movie, User, Show, Favorite, Like, Comment, BreakingNews, Notification,
-            Subscription, SubscriptionPlan, Message, Divertissement, PopularPrograms, Reel, Reportage, JTandMag, Share,
+            Movie, User,  Favorite, Like, Comment, BreakingNews, Notification,
+            Subscription, SubscriptionPlan, Message, Divertissement, Reel, Reportage, JTandMag, Share,
             Program, LiveChannel, ProgramReminder, UserSettings, SupportTicket, FAQ, AppInfo, TeamMember, Archive,
-            ArchivePurchase, PaymentMethod, RecordingSession, Category, Sport, EmissionCategory, ContactMessageDoc,
-            Series, Season, Episode
+            ArchivePurchase, PaymentMethod, RecordingSession, Sport, EmissionCategory, ContactMessageDoc,
+            Series, Season, Episode, CarouselItem,
+            TeleRealite, SectionCategory,
         ]
     )

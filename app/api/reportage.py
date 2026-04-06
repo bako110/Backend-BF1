@@ -1,58 +1,39 @@
-from fastapi import APIRouter, HTTPException, Depends
-from typing import List
+from fastapi import APIRouter, HTTPException, Depends, Query
+from typing import List, Optional
 from app.utils.auth import get_admin_user, get_optional_user
 from app.schemas.reportage import ReportageCreate, ReportageUpdate, ReportageOut
 from app.services.reportage_service import create_reportage, get_reportage, list_reportages, update_reportage, delete_reportage
+from app.models.reportage import Reportage
 
 router = APIRouter()
 
 
-@router.post("/", response_model=ReportageOut)
+@router.post("", response_model=ReportageOut)
 async def add_reportage(reportage: ReportageCreate, current_user=Depends(get_admin_user)):
 	return await create_reportage(reportage)
 
 
-@router.get("", response_model=List[ReportageOut])
+@router.get("")
 async def get_all_reportages(
-	skip: int = 0, 
-	limit: int = 50,
-	search: str = None,
+	skip: int = Query(0, ge=0),
+	limit: int = Query(20, ge=1, le=500),
+	search: Optional[str] = None,
 	current_user=Depends(get_optional_user)
 ):
-	reportages = await list_reportages(skip, limit)
-	
-	# Si un terme de recherche est fourni, filtrer les résultats
+	query = {}
 	if search:
-		search_lower = search.lower()
-		print(f" [REPORTAGES] Recherche complète: '{search}'")
-		
-		# Obtenir tous les reportages sans pagination d'abord
-		all_reportages = await list_reportages(0, 1000)  # Grande limite pour obtenir tous
-		
-		# Recherche complète dans tous les champs
-		filtered_reportages = []
-		for reportage in all_reportages:
-			# Recherche dans tous les champs disponibles
-			title_match = search_lower in reportage.title.lower()
-			desc_match = reportage.description and search_lower in reportage.description.lower()
-			host_match = hasattr(reportage, 'host') and reportage.host and search_lower in reportage.host.lower()
-			category_match = hasattr(reportage, 'category') and reportage.category and search_lower in reportage.category.lower()
-			sub_category_match = hasattr(reportage, 'sub_category') and reportage.sub_category and search_lower in reportage.sub_category.lower()
-			theme_match = hasattr(reportage, 'theme') and reportage.theme and search_lower in reportage.theme.lower()
-			location_match = hasattr(reportage, 'location') and reportage.location and search_lower in reportage.location.lower()
-			journalist_match = hasattr(reportage, 'journalist') and reportage.journalist and search_lower in reportage.journalist.lower()
-			tags_match = hasattr(reportage, 'tags') and reportage.tags and any(search_lower in tag.lower() for tag in reportage.tags)
-			
-			if title_match or desc_match or host_match or category_match or sub_category_match or theme_match or location_match or journalist_match or tags_match:
-				filtered_reportages.append(reportage)
-				print(f" [REPORTAGES] Match trouvé: '{reportage.title}' (titre:{title_match}, desc:{desc_match}, host:{host_match}, cat:{category_match})")
-		
-		print(f" [REPORTAGES] Résultats après recherche complète: {len(filtered_reportages)}")
-		
-		# Pagination sur les résultats filtrés
-		reportages = filtered_reportages[skip:skip + limit]
-	
-	return reportages
+		search_lower = search.strip()
+		query["$or"] = [
+			{"title": {"$regex": search_lower, "$options": "i"}},
+			{"description": {"$regex": search_lower, "$options": "i"}},
+			{"category": {"$regex": search_lower, "$options": "i"}},
+			{"tags": {"$in": [search_lower]}},
+		]
+
+	total = await Reportage.find(query).count()
+	items = await Reportage.find(query).skip(skip).limit(limit).to_list()
+
+	return {"items": items, "total": total, "skip": skip, "limit": limit}
 
 
 @router.get("/{reportage_id}", response_model=ReportageOut)

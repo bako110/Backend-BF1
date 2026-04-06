@@ -22,6 +22,9 @@ class User(Document):
     location_longitude: Optional[float] = Field(None, description="Longitude")
     location_updated_at: Optional[datetime] = Field(None, description="Date de dernière mise à jour de localisation")
     
+    # Tokens FCM pour les notifications push Firebase (web + mobile)
+    fcm_tokens: List[str] = Field(default_factory=list, description="Tokens FCM par appareil")
+
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
     reset_token: Optional[str] = Field(None, description="Token de réinitialisation du mot de passe")

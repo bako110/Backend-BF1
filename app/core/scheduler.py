@@ -79,6 +79,110 @@ async def sync_user_categories_job():
         print(f"❌ Erreur lors de la synchronisation des catégories: {e}")
 
 
+async def send_program_reminders_job():
+    """
+    Tache planifiee : envoie les rappels de programmes dus dans la prochaine minute.
+    Utilise une mise a jour atomique pour eviter les doublons entre workers gunicorn.
+    """
+    # Eviter l'execution sur plusieurs workers : seul le worker principal (pid le plus bas) execute
+    import os
+    worker_pid = os.getpid()
+
+    try:
+        from app.models.program import ProgramReminder
+        from app.models.user import User
+        from app.services.push_notification_service import push_notification_service
+        import firebase_admin
+        from firebase_admin import messaging as fcm_messaging
+        from datetime import timedelta
+        from beanie.operators import Set as BSet
+
+        now = datetime.utcnow()
+        window_end = now + timedelta(minutes=1)
+
+        # Recuperer les IDs eligibles
+        candidates = await ProgramReminder.find({
+            "status": "scheduled",
+            "scheduled_for": {"$gte": now, "$lte": window_end}
+        }).to_list()
+
+        if not candidates:
+            return
+
+        # Marquer atomiquement chaque rappel via findOneAndUpdate
+        # Seul le worker qui reussit le update (status: scheduled -> sending) traite le rappel
+        from motor.motor_asyncio import AsyncIOMotorClient
+        collection = ProgramReminder.get_motor_collection()
+
+        reminders = []
+        for candidate in candidates:
+            result = await collection.find_one_and_update(
+                {"_id": candidate.id, "status": "scheduled"},
+                {"$set": {"status": "sending"}},
+                return_document=True
+            )
+            if result:
+                reminders.append(await ProgramReminder.get(candidate.id))
+
+        if not reminders:
+            return  # Un autre worker a deja tout pris
+
+            print(f"[CRON][pid:{worker_pid}] Envoi rappel pour '{updated.program_title}'")
+
+            try:
+                user = await User.get(updated.user_id)
+                title = f"Rappel : {updated.program_title or 'Programme'}"
+                body  = f"Commence dans {updated.minutes_before} min sur {updated.channel_name or 'BF1 TV'}"
+
+                fcm_sent = False
+
+                # Envoi FCM si l'utilisateur a des tokens
+                if user and getattr(user, 'fcm_tokens', None) and firebase_admin._apps:
+                    tokens = [t for t in user.fcm_tokens if t]
+                    if tokens:
+                        msg = fcm_messaging.MulticastMessage(
+                            notification=fcm_messaging.Notification(title=title, body=body),
+                            data={
+                                "type":       "program_reminder",
+                                "program_id": str(updated.program_id),
+                                "title":      updated.program_title or '',
+                            },
+                            tokens=tokens,
+                            webpush=fcm_messaging.WebpushConfig(
+                                notification=fcm_messaging.WebpushNotification(icon='/logo.png')
+                            ),
+                        )
+                        response = fcm_messaging.send_each_for_multicast(msg)
+                        fcm_sent = response.success_count > 0
+                        print(f"[CRON] FCM: {response.success_count}/{len(tokens)} tokens OK")
+                else:
+                    print(f"[CRON] Pas de token FCM pour user {updated.user_id} — WebSocket seulement")
+
+                # Envoi WebSocket (onglet ouvert)
+                await push_notification_service._broadcast_notification({
+                    "title": title,
+                    "body":  body,
+                    "data":  {
+                        "type":       "program_reminder",
+                        "program_id": str(updated.program_id),
+                        "title":      updated.program_title or '',
+                    }
+                })
+
+                updated.status = "sent"
+                updated.sent_at = now
+                await updated.save()
+                print(f"[OK] Rappel envoye (FCM:{fcm_sent}) pour '{updated.program_title}'")
+
+            except Exception as e:
+                updated.status = "failed"
+                await updated.save()
+                print(f"[ERREUR] Rappel {updated.id}: {e}")
+
+    except Exception as e:
+        print(f"[ERREUR] Job rappels programmes: {e}")
+
+
 def start_scheduler():
     """
     Démarre le scheduler avec toutes les tâches planifiées.
@@ -135,10 +239,21 @@ def start_scheduler():
         name='Synchronisation des catégories (démarrage)'
     )
     
+    # Rappels de programmes : toutes les minutes
+    scheduler.add_job(
+        send_program_reminders_job,
+        'interval',
+        minutes=1,
+        id='send_program_reminders',
+        name='Envoyer les rappels de programmes',
+        replace_existing=True
+    )
+
     scheduler.start()
     print("✅ Scheduler démarré - Tâches planifiées:")
     print("   📅 Désactivation abonnements expirés: Toutes les heures")
     print("   🔄 Synchronisation catégories: Toutes les 6 heures")
+    print("   🔔 Rappels de programmes: Toutes les minutes")
     print("   🚀 Première exécution: Immédiatement au démarrage")
 
 

@@ -4,8 +4,7 @@ from datetime import datetime
 from bson import ObjectId
 
 ContentType = Literal[
-    "movie",
-    "show",
+    "teleRealite",
     "breaking_news",
     "reportage",
     "divertissement",

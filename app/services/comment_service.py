@@ -1,14 +1,14 @@
 from app.models.comment import Comment
 from app.models.user import User
 from app.models.movie import Movie
-from app.models.show import Show
 from app.models.breakingNews import BreakingNews
 from app.models.divertissement import Divertissement
 from app.models.reel import Reel
+from app.models.archive import Archive
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
-from app.models.popularPrograms import PopularPrograms
 from app.models.sport import Sport
+from app.models.tele_realite import TeleRealite
 from app.models.series import Series
 from app.utils.engagement import increment_comment
 from app.schemas.comment import CommentCreate, CommentUpdate
@@ -42,17 +42,17 @@ async def add_comment(user_id: str, data: CommentCreate) -> Optional[Comment]:
 
 CONTENT_MODELS = {
     "movie": Movie,
-    "show": Show,
     "breaking_news": BreakingNews,
     "divertissement": Divertissement,
     "reel": Reel,
     "reportage": Reportage,
     "jtandmag": JTandMag,
-    "popular_program": PopularPrograms,
+    "tele-realite": TeleRealite,
     "sport": Sport,
-    "series": Series
+    "series": Series,       
+    "archive": Archive,  # Pas de modèle spécifique pour les commentaires d'archive, on gère via l'endpoint dédié
 }
-
+    
 
 async def _get_content(content_type: str, content_id: str):
     model = CONTENT_MODELS.get(content_type)

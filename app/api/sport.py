@@ -33,78 +33,55 @@ async def get_all_sports(
     category: Optional[str] = Query(None, description="Filtrer par catégorie"),
     featured: Optional[bool] = Query(None, description="Filtrer les sports en vedette"),
     is_new: Optional[bool] = Query(None, description="Filtrer les nouveaux sports"),
-    page: int = Query(1, ge=1, description="Page actuelle"),
-    per_page: int = Query(20, ge=1, le=100, description="Éléments par page"),
+    skip: int = Query(0, ge=0, description="Nombre d'éléments à ignorer"),
+    limit: int = Query(20, ge=1, le=100, description="Éléments par page"),
     search: Optional[str] = Query(None, description="Rechercher dans tous les champs"),
     service: SportService = Depends(get_sport_service)
 ):
     """
     Récupère la liste de tous les sports avec pagination, filtres et recherche complète.
-    
-    - **category**: Filtre par catégorie (jt, magazines, documentaires, divertissement, sport, emission)
-    - **featured**: Filtre les sports en vedette
-    - **is_new**: Filtre les nouveaux sports
-    - **page**: Numéro de page pour la pagination
-    - **per_page**: Nombre d'éléments par page (max 100)
-    - **search**: Recherche complète dans titre, description, présentateur, catégorie, etc.
     """
-    # Si un terme de recherche est fourni, filtrer les résultats
     if search:
         search_lower = search.lower()
-        print(f"🔍 [SPORTS] Recherche complète: '{search}'")
-        
-        # Obtenir tous les sports sans pagination d'abord
         all_sports = await service.get_all_sports_raw()
-        
-        # Recherche complète dans tous les champs
+
         filtered_sports = []
         for sport in all_sports:
-            # Recherche dans tous les champs disponibles
             title_match = search_lower in sport.title.lower()
             desc_match = sport.description and search_lower in sport.description.lower()
             host_match = hasattr(sport, 'host') and sport.host and search_lower in sport.host.lower()
             category_match = hasattr(sport, 'category') and sport.category and search_lower in sport.category.lower()
             sub_category_match = hasattr(sport, 'sub_category') and sport.sub_category and search_lower in sport.sub_category.lower()
             tags_match = hasattr(sport, 'tags') and sport.tags and any(search_lower in tag.lower() for tag in sport.tags)
-            
+
             if title_match or desc_match or host_match or category_match or sub_category_match or tags_match:
                 filtered_sports.append(sport)
-                print(f"✅ [SPORTS] Match trouvé: '{sport.title}' (titre:{title_match}, desc:{desc_match}, host:{host_match}, cat:{category_match})")
-        
-        print(f"🎯 [SPORTS] Résultats après recherche complète: {len(filtered_sports)}")
-        
-        # Appliquer les autres filtres
+
         if category:
             filtered_sports = [e for e in filtered_sports if e.category == category]
         if featured is not None:
             filtered_sports = [e for e in filtered_sports if getattr(e, 'featured', False) == featured]
         if is_new is not None:
             filtered_sports = [e for e in filtered_sports if getattr(e, 'is_new', False) == is_new]
-        
-        # Pagination sur les résultats filtrés
+
         total_filtered = len(filtered_sports)
-        start = (page - 1) * per_page
-        end = start + per_page
-        paginated_sports = filtered_sports[start:end]
-        
-        # Retourner les résultats paginés
+        paginated_sports = filtered_sports[skip:skip + limit]
+
         return {
-            "sports": [SportResponse.from_orm(sport) for sport in paginated_sports],
+            "items": [SportResponse.from_orm(sport) for sport in paginated_sports],
             "total": total_filtered,
-            "page": page,
-            "per_page": per_page,
-            "total_pages": (total_filtered + per_page - 1) // per_page if total_filtered > 0 else 0
+            "skip": skip,
+            "limit": limit,
         }
-    
-    # Recherche normale sans terme de recherche
+
     result = await service.get_all_sports(
         category=category,
         featured=featured,
         is_new=is_new,
-        page=page,
-        per_page=per_page
+        skip=skip,
+        limit=limit
     )
-    
+
     return result
 
 

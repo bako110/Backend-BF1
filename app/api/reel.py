@@ -56,7 +56,7 @@ async def add_reel(request: Request, current_user=Depends(get_admin_user)):
 @router.get("")
 async def get_all_reels(
 	page: int = 1,
-	limit: int = 50,
+	limit: int = 20,
 	current_user=Depends(get_optional_user)
 ):
 	# Convertir page en skip pour la pagination
@@ -151,7 +151,7 @@ async def get_reel_likes_count(reel_id: str, current_user=Depends(get_optional_u
 async def get_reel_comments(
 	reel_id: str,
 	skip: int = 0,
-	limit: int = 50,
+	limit: int = 20,
 	current_user=Depends(get_optional_user)
 ):
 	"""Récupérer les commentaires d'un reel"""

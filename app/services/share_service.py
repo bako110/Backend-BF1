@@ -1,12 +1,11 @@
 from app.models.share import Share
 from app.models.movie import Movie
-from app.models.show import Show
 from app.models.breakingNews import BreakingNews
 from app.models.divertissement import Divertissement
 from app.models.reel import Reel
+from app.models.archive import Archive
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
-from app.models.popularPrograms import PopularPrograms
 from app.models.sport import Sport
 from app.models.series import Series
 from app.schemas.share import ShareCreate
@@ -16,15 +15,14 @@ from app.utils.engagement import increment_share
 
 CONTENT_MODELS = {
     "movie": Movie,
-    "show": Show,
     "breaking_news": BreakingNews,
     "divertissement": Divertissement,
     "reel": Reel,
     "reportage": Reportage,
     "jtandmag": JTandMag,
-    "popular_program": PopularPrograms,
     "sport": Sport,
-    "series": Series
+    "series": Series,
+    "archive": Archive,
 }
 
 

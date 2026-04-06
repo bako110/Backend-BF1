@@ -6,6 +6,7 @@ from bson import ObjectId
 ContentType = Literal[
 	"movie",
 	"show",
+	"tele_realite",
 	"breaking_news",
 	"reportage",
 	"divertissement",

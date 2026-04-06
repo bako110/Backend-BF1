@@ -9,14 +9,16 @@ bind = f"0.0.0.0:{os.getenv('PORT', '8080')}"
 backlog = 2048
 
 # Worker processes
-workers = multiprocessing.cpu_count() * 2 + 1
+# Sur Fly.io (1 vCPU) : 2 workers suffisent, evite la surcharge au demarrage
+workers = int(os.getenv("WEB_CONCURRENCY", max(2, multiprocessing.cpu_count())))
 worker_class = "uvicorn.workers.UvicornWorker"
 worker_connections = 1000
 max_requests = 1000
 max_requests_jitter = 50
 preload_app = True
-timeout = 300  # 5 minutes pour supporter l'upload de vidéos jusqu'à 70 Mo
-keepalive = 2
+timeout = 300       # 5 minutes pour supporter l'upload de videos jusqu'a 70 Mo
+graceful_timeout = 30  # Temps pour finir les requetes en cours avant de tuer un worker
+keepalive = 5
 
 # Restart workers after this many seconds, to prevent memory leaks
 max_worker_memory = 150  # MB

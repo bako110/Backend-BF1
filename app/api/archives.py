@@ -13,32 +13,40 @@ from app.utils.auth import get_current_user, get_admin_user, get_optional_user
 router = APIRouter()
 
 
-@router.get("")  
+@router.get("")
 async def get_archives(
     skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=100),
+    limit: int = Query(20, ge=1, le=1000),
     category: Optional[str] = None,
+    search: Optional[str] = None,
     is_active: bool = True,
     sort_by: str = Query("created_at", description="Trier par: created_at, popularity, rating, views, price"),
     order: str = Query("desc", description="Ordre: asc ou desc")
 ):
-    """Récupérer toutes les archives avec filtres et tri avancés"""
+    """Récupérer toutes les archives avec filtres, recherche et pagination backend"""
     try:
         query = {"is_active": is_active}
-        
+
         if category:
             query["category"] = category
-        
-        # Déterminer le tri
+
+        if search:
+            s = search.strip()
+            query["$or"] = [
+                {"title": {"$regex": s, "$options": "i"}},
+                {"description": {"$regex": s, "$options": "i"}},
+                {"category": {"$regex": s, "$options": "i"}},
+            ]
+
         sort_field = sort_by
         sort_direction = -1 if order == "desc" else 1
-        
+
+        total = await Archive.find(query).count()
         archives = await Archive.find(query).sort(
             [(sort_field, sort_direction)]
         ).skip(skip).limit(limit).to_list()
-        
-        # Convertir les ObjectId en string manuellement avec gestion des valeurs None
-        return [
+
+        items = [
             {
                 "id": str(archive.id),
                 "title": archive.title or "",
@@ -56,6 +64,7 @@ async def get_archives(
                 "is_premium": archive.is_premium if hasattr(archive, 'is_premium') else True,
                 "is_active": archive.is_active if hasattr(archive, 'is_active') else True,
                 "views": archive.views or 0,
+                "likes": archive.likes if hasattr(archive, 'likes') else 0,
                 "rating": archive.rating or 0.0,
                 "rating_count": archive.rating_count or 0,
                 "purchases_count": archive.purchases_count or 0,
@@ -65,6 +74,7 @@ async def get_archives(
             }
             for archive in archives
         ]
+        return {"items": items, "total": total, "skip": skip, "limit": limit}
     except Exception as e:
         print(f"❌ Erreur lors de la récupération des archives: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erreur serveur: {str(e)}")
@@ -102,9 +112,10 @@ async def get_archive(
                     detail="Abonnement premium ou achat individuel requis pour accéder à cette archive"
                 )
     
-    # Incrémenter les vues
-    archive.views += 1
-    await archive.save()
+    # Incrémentation atomique des vues (évite les pertes sous forte charge)
+    await Archive.find_one({"_id": archive.id}).update({"$inc": {"views": 1}})
+    # Recharger l'archive pour retourner la valeur à jour
+    archive = await Archive.get(archive_id)
     
     return archive
 

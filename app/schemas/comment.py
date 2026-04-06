@@ -6,8 +6,7 @@ from bson import ObjectId
 class CommentBase(BaseModel):
     content_id: str = Field(..., description="ID du contenu")
     content_type: Literal[
-        "movie",
-        "show",
+        "teleRealite",
         "breaking_news",
         "reportage",
         "divertissement",

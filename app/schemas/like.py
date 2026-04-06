@@ -6,8 +6,8 @@ from bson import ObjectId
 class LikeBase(BaseModel):
     content_id: str = Field(..., description="ID du contenu")
     content_type: Literal[
-        "movie",
-        "show",
+        "tele_realite",
+        "teleRealite",
         "breaking_news",
         "reportage",
         "reel",

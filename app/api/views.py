@@ -7,7 +7,6 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timedelta
-from app.models.show import Show
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
 from app.models.divertissement import Divertissement
@@ -16,6 +15,7 @@ from app.models.movie import Movie
 from app.models.reel import Reel
 from app.models.sport import Sport
 from app.models.breakingNews import BreakingNews
+from app.models.tele_realite import TeleRealite
 
 router = APIRouter()
 
@@ -25,7 +25,6 @@ _view_cache: dict[str, datetime] = {}
 _VIEW_TTL = timedelta(hours=24)
 
 MODEL_MAP = {
-    'show': Show,
     'reportage': Reportage,
     'divertissement': Divertissement,
     'archive': Archive,
@@ -36,6 +35,8 @@ MODEL_MAP = {
     'sports': Sport,
     'breaking_news': BreakingNews,
     'news': BreakingNews,
+    'tele_realite': TeleRealite,
+    'event': TeleRealite,
 }
 
 

@@ -109,11 +109,10 @@ class SportResponse(SportBase):
 
 class SportList(BaseModel):
     """Schéma pour la liste des sports"""
-    sports: List[SportResponse]
+    items: List[SportResponse]
     total: int = Field(..., ge=0, description="Nombre total de sports")
-    page: int = Field(..., ge=1, description="Page actuelle")
-    per_page: int = Field(..., ge=1, le=100, description="Éléments par page")
-    total_pages: int = Field(..., ge=0, description="Nombre total de pages")
+    skip: int = Field(..., ge=0, description="Nombre d'éléments ignorés")
+    limit: int = Field(..., ge=1, description="Éléments par page")
 
 
 class SportStats(BaseModel):

@@ -6,12 +6,12 @@ Recherche dans tous les types de contenu : sports, shows, reportages, divertisse
 from fastapi import APIRouter, Query
 from typing import List, Dict, Optional
 from app.models.sport import Sport
-from app.models.show import Show
 from app.models.reportage import Reportage
 from app.models.divertissement import Divertissement
 from app.models.jtandmag import JTandMag
 from app.models.breakingNews import BreakingNews
 from app.models.archive import Archive
+from app.models.tele_realite import TeleRealite
 
 router = APIRouter()
 
@@ -56,25 +56,26 @@ async def search_content(
             for s in sports
         ]
         
-        # Recherche dans les shows
-        shows = await Show.find(
+        # Recherche dans télé-réalité & événements
+        tele_realite_items = await TeleRealite.find(
             {"$or": [
                 {"title": {"$regex": query, "$options": "i"}},
-                {"description": {"$regex": query, "$options": "i"}}
+                {"description": {"$regex": query, "$options": "i"}},
+                {"category": {"$regex": query, "$options": "i"}},
             ]}
         ).limit(limit).to_list()
-        
-        shows_formatted = [
+
+        tele_realite_formatted = [
             {
-                "id": str(s.id),
-                "title": s.title,
-                "description": s.description or "",
-                "image_url": getattr(s, 'image_url', None) or getattr(s, 'thumbnail', None) or getattr(s, 'image', None) or "",
-                "type": "show"
+                "id": str(t.id),
+                "title": t.title,
+                "description": t.description or "",
+                "image_url": getattr(t, 'thumbnail', None) or getattr(t, 'image', None) or "",
+                "type": t.sub_type or "tele_realite",
             }
-            for s in shows
+            for t in tele_realite_items
         ]
-        
+
         # Recherche dans les reportages
         reportages = await Reportage.find(
             {"$or": [
@@ -172,24 +173,24 @@ async def search_content(
         
         # Combiner tous les résultats
         all_items = (
-            sports_formatted + 
-            shows_formatted + 
-            reportages_formatted + 
-            divertissements_formatted + 
-            jtandmag_formatted + 
-            news_formatted + 
+            sports_formatted +
+            tele_realite_formatted +
+            reportages_formatted +
+            divertissements_formatted +
+            jtandmag_formatted +
+            news_formatted +
             archives_formatted
         )
-        
+
         # Organiser par catégorie
         results["categoryResults"] = {
             "sports": sports_formatted,
-            "shows": shows_formatted,
+            "tele_realite": tele_realite_formatted,
             "reportages": reportages_formatted,
             "divertissements": divertissements_formatted,
             "jtandmag": jtandmag_formatted,
             "news": news_formatted,
-            "archives": archives_formatted
+            "archives": archives_formatted,
         }
         
         results["items"] = all_items

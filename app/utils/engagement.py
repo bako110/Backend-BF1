@@ -1,51 +1,46 @@
-from typing import Optional
+from bson import ObjectId
 
 from app.models.movie import Movie
-from app.models.show import Show
 from app.models.breakingNews import BreakingNews
 from app.models.divertissement import Divertissement
 from app.models.reel import Reel
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
-from app.models.popularPrograms import PopularPrograms
 from app.models.sport import Sport
 from app.models.emission_category import EmissionCategory
 from app.models.series import Series
+from app.models.archive import Archive
+from app.models.tele_realite import TeleRealite
 
 
 CONTENT_MODELS = {
     "movie": Movie,
-    "show": Show,
     "breaking_news": BreakingNews,
     "divertissement": Divertissement,
     "reel": Reel,
     "reportage": Reportage,
     "jtandmag": JTandMag,
-    "popular_program": PopularPrograms,
     "sport": Sport,
     "emission_category": EmissionCategory,
     "series": Series,
+    "archive": Archive,
+    "tele_realite": TeleRealite,
+    "event": TeleRealite,
 }
 
 
 async def _update_counter(content_type: str, content_id: str, field: str, delta: int) -> None:
+    """Mise a jour atomique via $inc — evite les race conditions avec plusieurs workers."""
     model = CONTENT_MODELS.get(content_type)
     if not model:
         return
-
-    doc = await model.get(content_id)
-    if not doc:
-        return
-
-    if not hasattr(doc, field):
-        return
-
-    current = getattr(doc, field) or 0
-    new_value = current + delta
-    if new_value < 0:
-        new_value = 0
-    setattr(doc, field, new_value)
-    await doc.save()
+    try:
+        col = model.get_motor_collection()
+        # $max garantit que le champ ne descend pas sous 0
+        pipeline = [{"$set": {field: {"$max": [0, {"$add": [{"$ifNull": [f"${field}", 0]}, delta]}]}}}]
+        await col.update_one({"_id": ObjectId(content_id)}, pipeline)
+    except Exception as e:
+        print(f"[engagement] Erreur update {content_type}/{content_id} {field}: {e}")
 
 
 async def increment_like(content_type: str, content_id: str, delta: int) -> None:

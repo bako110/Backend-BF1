@@ -16,7 +16,7 @@ class CloudinaryService:
             api_key=os.getenv('CLOUDINARY_API_KEY', '564629531797987'),
             api_secret=os.getenv('CLOUDINARY_API_SECRET', 'bwIGyXjIG8aQC0U6oV6ycHNhR90')
         )
-        print("✅ Cloudinary configuré")
+        print("Cloudinary configuré")
     
     def upload_image(self, file_path: str, folder: str = "bf1", public_id: Optional[str] = None) -> Dict[str, Any]:
         """
