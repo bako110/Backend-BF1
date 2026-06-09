@@ -62,13 +62,12 @@ async def delete_carousel_item(item_id: str) -> bool:
     if not item:
         return False
 
-    # Supprimer l'image Cloudinary
-    if item.cloudinary_public_id:
+    if item.file_public_id:
         try:
-            import cloudinary.uploader
-            cloudinary.uploader.destroy(item.cloudinary_public_id)
+            from app.services.local_storage_service import local_storage
+            local_storage.delete_file(item.file_public_id)
         except Exception as e:
-            print(f"⚠️ Erreur suppression Cloudinary: {e}")
+            print(f"⚠️ Erreur suppression fichier local: {e}")
 
     await item.delete()
     return True

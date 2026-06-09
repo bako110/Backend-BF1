@@ -457,11 +457,11 @@ async def update_my_profile(data: UserProfileUpdate, current_user=Depends(get_cu
                 with open(temp_path, "wb") as f:
                     f.write(img_bytes)
                 try:
-                    from app.services.cloudinary_service import cloudinary_service
-                    result = cloudinary_service.upload_image(
+                    from app.services.local_storage_service import local_storage
+                    result = local_storage.upload_image(
                         file_path=temp_path,
                         folder="bf1/avatars",
-                        public_id=f"avatar_{current_user.id}"
+                        public_id=f"avatar_{current_user.id}",
                     )
                     current_user.avatar_url = result['url']
                 finally:
