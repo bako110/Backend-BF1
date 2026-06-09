@@ -126,6 +126,20 @@ async def delete_one_reel(reel_id: str, current_user=Depends(get_admin_user)):
 	return {"ok": True}
 
 
+class BatchDeleteIds(BaseModel):
+	ids: List[str]
+
+@router.post("/delete-batch")
+async def delete_batch_reel(body: BatchDeleteIds, current_user=Depends(get_admin_user)):
+	if not body.ids:
+		raise HTTPException(status_code=400, detail="Aucun ID fourni")
+	count = 0
+	for item_id in body.ids:
+		if await delete_reel(item_id):
+			count += 1
+	return {"ok": True, "deleted": count}
+
+
 # ==================== LIKES ====================
 
 @router.post("/{reel_id}/like")

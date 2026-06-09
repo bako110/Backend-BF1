@@ -4,10 +4,10 @@ from datetime import datetime
 from typing import Optional
 
 
-class JTandMag(Document):
-    title: str = Field(..., description="Titre de l'émission")
+class Magazine(Document):
+    title: str = Field(..., description="Titre du magazine")
     category: str = Field(..., description="Catégorie")
-    image: Optional[HttpUrl] = Field(None, description="Image de l'émission")
+    image: Optional[HttpUrl] = Field(None, description="Image du magazine")
     video_url: Optional[str] = Field(None, description="URL de la vidéo (YouTube ou directe)")
     description: Optional[str] = Field(None, description="Description")
     host: Optional[str] = Field(None, description="Animateur / présentateur")
@@ -21,7 +21,7 @@ class JTandMag(Document):
     updated_at: Optional[datetime] = Field(None, description="Date de mise à jour")
 
     class Settings:
-        name = "jtandmag"
+        name = "magazine"
         indexes = [
             "category",
             [("created_at", -1)],

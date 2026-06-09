@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
-from typing import Optional
+from typing import Optional, List
+from pydantic import BaseModel
 from app.utils.auth import get_admin_user, get_optional_user
 from app.schemas.tele_realite import TeleRealiteCreate, TeleRealiteUpdate, TeleRealiteOut
 from app.services.tele_realite_service import (
@@ -20,10 +21,11 @@ async def get_all_tele_realite(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=500),
     sub_type: Optional[str] = Query(None, description="Filtrer par type : tele_realite | event"),
+    category: Optional[str] = Query(None, description="Filtrer par catégorie"),
     search: Optional[str] = Query(None, description="Recherche par titre, description, catégorie"),
     current_user=Depends(get_optional_user),
 ):
-    return await list_tele_realite(skip=skip, limit=limit, sub_type=sub_type, search=search)
+    return await list_tele_realite(skip=skip, limit=limit, sub_type=sub_type, category=category, search=search)
 
 
 @router.get("/{item_id}", response_model=TeleRealiteOut)
@@ -50,3 +52,17 @@ async def delete_one_tele_realite(item_id: str, current_user=Depends(get_admin_u
     if not deleted:
         raise HTTPException(status_code=404, detail="Élément non trouvé")
     return {"ok": True}
+
+
+class BatchDeleteIds(BaseModel):
+    ids: List[str]
+
+@router.post("/delete-batch")
+async def delete_batch_tele_realite(body: BatchDeleteIds, current_user=Depends(get_admin_user)):
+    if not body.ids:
+        raise HTTPException(status_code=400, detail="Aucun ID fourni")
+    count = 0
+    for item_id in body.ids:
+        if await delete_tele_realite(item_id):
+            count += 1
+    return {"ok": True, "deleted": count}

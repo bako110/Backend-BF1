@@ -38,43 +38,53 @@ async def deactivate_expired_subscriptions_job():
 async def sync_user_categories_job():
     """
     Tâche planifiée : synchronise les catégories d'abonnement des utilisateurs.
-    Met à jour subscription_category et is_premium pour tous les utilisateurs
-    ayant des abonnements actifs mais des données incohérentes.
+    Traite les users par batch de 100 pour éviter de charger toute la collection en mémoire.
     """
     try:
         from app.models.user import User
-        from app.services.subscription_service import sync_user_premium_status
-        
+        from app.models.subscription import Subscription
+        from app.utils.subscription_utils import get_highest_active_category
+
         print(f"\n🔄 [CRON {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Synchronisation des catégories d'abonnement...")
-        
-        # Récupérer tous les utilisateurs
-        users = await User.find().to_list()
+
+        BATCH_SIZE = 100
+        skip = 0
         updated_count = 0
-        
-        for user in users:
-            try:
-                # Synchroniser chaque utilisateur
-                old_category = user.subscription_category
-                old_premium = user.is_premium
-                
-                await sync_user_premium_status(str(user.id))
-                
-                # Recharger l'utilisateur pour voir les changements
-                updated_user = await User.get(user.id)
-                
-                if (updated_user.subscription_category != old_category or 
-                    updated_user.is_premium != old_premium):
-                    print(f"✅ Utilisateur {user.email}: {old_category} -> {updated_user.subscription_category}, premium: {old_premium} -> {updated_user.is_premium}")
+
+        while True:
+            users = await User.find().skip(skip).limit(BATCH_SIZE).to_list()
+            if not users:
+                break
+
+            user_ids = [str(u.id) for u in users]
+
+            # Charger tous les abonnements actifs de ce batch en une seule requête
+            active_subs = await Subscription.find(
+                {"user_id": {"$in": user_ids}, "is_active": True}
+            ).to_list()
+
+            subs_by_user: dict = {}
+            for sub in active_subs:
+                subs_by_user.setdefault(sub.user_id, []).append(sub)
+
+            for user in users:
+                uid = str(user.id)
+                user_subs = subs_by_user.get(uid, [])
+                categories = [s.category for s in user_subs if s.category]
+                new_category = get_highest_active_category(categories) if categories else None
+                new_premium = new_category is not None
+
+                if user.subscription_category != new_category or user.is_premium != new_premium:
+                    await User.find_one(User.id == user.id).update(
+                        {"$set": {"subscription_category": new_category, "is_premium": new_premium}}
+                    )
                     updated_count += 1
-                    
-            except Exception as user_error:
-                print(f"❌ Erreur sync utilisateur {user.email}: {user_error}")
-        
-        if updated_count > 0:
-            print(f"✅ {updated_count} utilisateur(s) synchronisé(s)")
-        else:
-            print(f"✅ Aucune synchronisation nécessaire")
-            
+
+            skip += BATCH_SIZE
+            await asyncio.sleep(0)  # Yield event loop entre batches
+
+        print(f"✅ {updated_count} utilisateur(s) synchronisé(s)")
+
     except Exception as e:
         print(f"❌ Erreur lors de la synchronisation des catégories: {e}")
 

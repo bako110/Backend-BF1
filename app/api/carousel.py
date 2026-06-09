@@ -6,6 +6,7 @@ Routes admin      : POST, PUT, PATCH image, DELETE
 
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
+from pydantic import BaseModel
 
 from app.utils.auth import get_admin_user
 from app.schemas.carousel import CarouselItemCreate, CarouselItemUpdate, CarouselItemOut, CarouselImageUpdate
@@ -99,6 +100,21 @@ async def delete_carousel(item_id: str, _admin=Depends(get_admin_user)):
     if not deleted:
         raise HTTPException(status_code=404, detail="Slide introuvable")
     return {"ok": True, "message": "Slide supprimée"}
+
+
+class BatchDeleteIds(BaseModel):
+    ids: List[str]
+
+@router.post("/delete-batch")
+async def delete_batch_carousel(body: BatchDeleteIds, _admin=Depends(get_admin_user)):
+    """Supprimer plusieurs slides en lot (admin seulement)"""
+    if not body.ids:
+        raise HTTPException(status_code=400, detail="Aucun ID fourni")
+    count = 0
+    for item_id in body.ids:
+        if await delete_carousel_item(item_id):
+            count += 1
+    return {"ok": True, "deleted": count}
 
 
 # ─────────────────────────────────────────

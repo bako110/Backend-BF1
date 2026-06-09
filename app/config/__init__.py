@@ -15,6 +15,7 @@ from app.models.divertissement import Divertissement
 from app.models.reel import Reel
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
+from app.models.magazine import Magazine
 from app.models.share import Share
 from app.models.program import Program, LiveChannel, ProgramReminder
 from app.models.user_settings import UserSettings
@@ -31,6 +32,8 @@ from app.models.carousel import CarouselItem
 from app.models.tele_realite import TeleRealite
 from app.models.section_category import SectionCategory
 from app.models.view_log import ViewLog
+from app.models.missed import Missed
+from app.models.admin_notification import AdminNotification
 from app.api.contact import ContactMessageDoc
 from app.models import enums
 from dotenv import load_dotenv
@@ -38,9 +41,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 async def init_db():
-    db_url = os.getenv("MONGODB_URI", "MONGODB_URI=mongodb://localhost:27017/Bf1_db_dev")
+    db_url = os.getenv("MONGODB_URI", "mongodb://localhost:27017/Bf1_db_dev")
     db_name = os.getenv("MONGODB_DBNAME", "Bf1_db_dev")
-    client = AsyncIOMotorClient(db_url)
+    client = AsyncIOMotorClient(
+        db_url,
+        maxPoolSize=50,
+        minPoolSize=5,
+        maxIdleTimeMS=30000,
+        serverSelectionTimeoutMS=5000,
+        connectTimeoutMS=5000,
+        socketTimeoutMS=10000,
+    )
     await init_beanie(
         database=client[db_name],
         document_models=[
@@ -49,6 +60,7 @@ async def init_db():
             Program, LiveChannel, ProgramReminder, UserSettings, SupportTicket, FAQ, AppInfo, TeamMember, Archive,
             ArchivePurchase, PaymentMethod, RecordingSession, Sport, EmissionCategory, ContactMessageDoc,
             Series, Season, Episode, CarouselItem,
-            TeleRealite, SectionCategory, ViewLog,
+            TeleRealite, SectionCategory, ViewLog, Missed,
+            AdminNotification, Magazine,
         ]
     )

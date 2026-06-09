@@ -9,6 +9,7 @@ ContentType = Literal[
     "reportage",
     "divertissement",
     "jtandmag",
+    "magazine",
     "popular_program",
     "archive",
     "program",
@@ -16,7 +17,8 @@ ContentType = Literal[
     "sport",
     "reel",
     "emission_category",
-    "series"
+    "series",
+    "missed"
 ]
 
 

@@ -1,135 +1,163 @@
 """
 API pour gérer les vues des contenus.
-Logique anti-doublon : 1 vue par utilisateur/IP par contenu toutes les 24h.
+- Incrément atomique via $inc (pas de race condition)
+- Anti-doublon persisté en DB (ViewLog) — survit aux redémarrages
+- TTL 24h par user_id (si connecté) ou IP (anonyme)
+- Silencieux : ne plante jamais le serveur, retourne toujours une réponse
 """
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime, timedelta
-from app.models.reportage import Reportage
-from app.models.jtandmag import JTandMag
-from app.models.divertissement import Divertissement
-from app.models.archive import Archive
-from app.models.movie import Movie
-from app.models.reel import Reel
-from app.models.sport import Sport
-from app.models.breakingNews import BreakingNews
-from app.models.tele_realite import TeleRealite
+from datetime import datetime, timedelta, timezone
+from bson import ObjectId
+
+from app.models.view_log import ViewLog
+from app.utils.engagement import CONTENT_MODELS, _update_counter
 
 router = APIRouter()
 
-# Cache en mémoire : clé = "ip:content_type:content_id", valeur = datetime de la dernière vue
-# TTL : 24h — même logique que YouTube/Facebook
-_view_cache: dict[str, datetime] = {}
 _VIEW_TTL = timedelta(hours=24)
 
-MODEL_MAP = {
-    'reportage': Reportage,
-    'divertissement': Divertissement,
-    'archive': Archive,
-    'jtandmag': JTandMag,
-    'movie': Movie,
-    'reel': Reel,
-    'sport': Sport,
-    'sports': Sport,
-    'breaking_news': BreakingNews,
-    'news': BreakingNews,
-    'tele_realite': TeleRealite,
-    'event': TeleRealite,
+# Types acceptés (alias inclus)
+_TYPE_ALIASES = {
+    'sports': 'sport',
+    'news':   'breaking_news',
+    'event':  'tele_realite',
 }
 
 
-def _get_viewer_id(request: Request, user_id: Optional[str]) -> str:
-    """Identifiant unique du spectateur : user_id si connecté, sinon IP."""
+def _normalize_type(content_type: str) -> str:
+    return _TYPE_ALIASES.get(content_type, content_type)
+
+
+def _get_identifier(request: Request, user_id: Optional[str]) -> str:
+    """user_id si connecté, sinon IP réelle (header x-forwarded-for pour proxy/Fly.io)."""
     if user_id:
-        return f"user:{user_id}"
-    ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
-    return f"ip:{ip.split(',')[0].strip()}"
+        return f"u:{user_id}"
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        ip = forwarded.split(",")[0].strip()
+    elif request.client:
+        ip = request.client.host
+    else:
+        ip = "unknown"
+    return f"ip:{ip}"
 
 
-def _already_viewed(viewer_id: str, content_type: str, content_id: str) -> bool:
-    """Retourne True si ce spectateur a déjà vu ce contenu dans les 24h."""
-    key = f"{viewer_id}:{content_type}:{content_id}"
-    last = _view_cache.get(key)
-    if last and datetime.utcnow() - last < _VIEW_TTL:
-        return True
-    return False
+async def _already_viewed_db(identifier: str, content_type: str, content_id: str) -> bool:
+    """Vérifie en DB si une vue a déjà été comptée dans les 24h."""
+    try:
+        cutoff = datetime.now(timezone.utc) - _VIEW_TTL
+        existing = await ViewLog.find_one(
+            ViewLog.identifier   == identifier,
+            ViewLog.content_type == content_type,
+            ViewLog.content_id   == content_id,
+            ViewLog.created_at   >= cutoff,
+        )
+        return existing is not None
+    except Exception as e:
+        print(f"[views] Erreur check ViewLog: {e}")
+        return False  # En cas d'erreur DB, on laisse passer (ne pas bloquer)
 
 
-def _mark_viewed(viewer_id: str, content_type: str, content_id: str):
-    key = f"{viewer_id}:{content_type}:{content_id}"
-    _view_cache[key] = datetime.utcnow()
-    # Nettoyage périodique pour éviter la fuite mémoire
-    if len(_view_cache) > 50_000:
-        cutoff = datetime.utcnow() - _VIEW_TTL
-        expired = [k for k, v in _view_cache.items() if v < cutoff]
-        for k in expired:
-            del _view_cache[k]
+async def _record_view_db(identifier: str, content_type: str, content_id: str) -> None:
+    """Enregistre la vue en DB."""
+    try:
+        log = ViewLog(
+            content_id   = content_id,
+            content_type = content_type,
+            identifier   = identifier,
+        )
+        await log.insert()
+    except Exception as e:
+        print(f"[views] Erreur insert ViewLog: {e}")
+
+
+async def _get_current_views(content_type: str, content_id: str) -> int:
+    """Récupère le compteur de vues actuel sans planter."""
+    try:
+        model = CONTENT_MODELS.get(content_type)
+        if not model:
+            return 0
+        col = model.get_motor_collection()
+        doc = await col.find_one({"_id": ObjectId(content_id)}, {"views": 1})
+        return int(doc.get("views", 0)) if doc else 0
+    except Exception:
+        return 0
 
 
 class ViewRequest(BaseModel):
-    content_id: str
+    content_id:   str
     content_type: str
-    user_id: Optional[str] = None
+    user_id:      Optional[str] = None
 
 
 @router.post("/increment")
 async def increment_view(view_request: ViewRequest, request: Request):
     """
     Incrémenter les vues d'un contenu.
-    Ignoré si le même utilisateur/IP a déjà vu dans les 24h.
+    - Atomique ($inc MongoDB)
+    - Anti-doublon 24h persisté en DB
+    - Ne renvoie jamais d'erreur 4xx/5xx au client (silencieux)
     """
-    content_id   = view_request.content_id
-    content_type = view_request.content_type
+    content_id   = (view_request.content_id or "").strip()
+    content_type = _normalize_type((view_request.content_type or "").strip())
 
-    if content_type not in MODEL_MAP:
-        raise HTTPException(status_code=400, detail=f"Type invalide: {content_type}")
+    # Type inconnu → on ignore silencieusement
+    if content_type not in CONTENT_MODELS:
+        return {"success": False, "reason": "unknown_type", "views": 0}
 
-    viewer_id = _get_viewer_id(request, view_request.user_id)
+    # ID vide
+    if not content_id:
+        return {"success": False, "reason": "missing_id", "views": 0}
 
-    # Déjà vu → on retourne le compteur actuel sans incrémenter
-    if _already_viewed(viewer_id, content_type, content_id):
-        Model = MODEL_MAP[content_type]
-        content = await Model.get(content_id)
+    identifier = _get_identifier(request, view_request.user_id)
+
+    # Déjà vu dans les 24h → retourner le compteur sans incrémenter
+    if await _already_viewed_db(identifier, content_type, content_id):
+        views = await _get_current_views(content_type, content_id)
         return {
-            "success": True,
+            "success":        True,
             "already_counted": True,
-            "content_id": content_id,
-            "content_type": content_type,
-            "views": content.views or 0 if content else 0,
+            "content_id":     content_id,
+            "content_type":   content_type,
+            "views":          views,
         }
 
-    Model = MODEL_MAP[content_type]
-    content = await Model.get(content_id)
-    if not content:
-        raise HTTPException(status_code=404, detail=f"{content_type} non trouvé")
+    # Vérifier que le document existe avant d'incrémenter
+    try:
+        model = CONTENT_MODELS[content_type]
+        col   = model.get_motor_collection()
+        exists = await col.find_one({"_id": ObjectId(content_id)}, {"_id": 1})
+        if not exists:
+            return {"success": False, "reason": "not_found", "views": 0}
+    except Exception as e:
+        print(f"[views] Erreur find document {content_type}/{content_id}: {e}")
+        return {"success": False, "reason": "db_error", "views": 0}
 
-    content.views = (content.views or 0) + 1
-    await content.save()
-    _mark_viewed(viewer_id, content_type, content_id)
+    # Incrément atomique
+    await _update_counter(content_type, content_id, "views", 1)
+
+    # Enregistrer la vue en DB (anti-doublon)
+    await _record_view_db(identifier, content_type, content_id)
+
+    views = await _get_current_views(content_type, content_id)
 
     return {
-        "success": True,
+        "success":        True,
         "already_counted": False,
-        "content_id": content_id,
-        "content_type": content_type,
-        "views": content.views,
+        "content_id":     content_id,
+        "content_type":   content_type,
+        "views":          views,
     }
 
 
 @router.get("/{content_type}/{content_id}")
 async def get_views(content_type: str, content_id: str):
     """Récupérer le nombre de vues d'un contenu."""
-    if content_type not in MODEL_MAP:
-        raise HTTPException(status_code=400, detail=f"Type invalide: {content_type}")
-
-    content = await MODEL_MAP[content_type].get(content_id)
-    if not content:
-        raise HTTPException(status_code=404, detail=f"{content_type} non trouvé")
-
-    return {
-        "content_id": content_id,
-        "content_type": content_type,
-        "views": content.views or 0,
-    }
+    content_type = _normalize_type(content_type)
+    if content_type not in CONTENT_MODELS:
+        return {"content_id": content_id, "content_type": content_type, "views": 0}
+    views = await _get_current_views(content_type, content_id)
+    return {"content_id": content_id, "content_type": content_type, "views": views}

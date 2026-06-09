@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse
+from pydantic import BaseModel, EmailStr
 from app.utils.auth import get_current_user, get_admin_user
-from app.schemas.user import UserCreate, UserOut, UserLoginSchema, UserLocationUpdate, FcmTokenUpdate
+from app.schemas.user import UserCreate, UserOut, UserLoginSchema, UserLocationUpdate, FcmTokenUpdate, UserProfileUpdate
 from app.services.user_service import create_user, get_user, list_users, login_user_service, set_user_active, delete_user
 from app.models.user import User
 from typing import List
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
 from passlib.context import CryptContext
 import secrets
 import os
@@ -80,8 +80,13 @@ async def login_user(data: UserLoginSchema):
 
 @router.get("/me", response_model=UserOut)
 async def get_current_user_info(current_user=Depends(get_current_user)):
-    """Récupérer les informations de l'utilisateur connecté"""
-    return current_user
+    """Récupérer les informations de l'utilisateur connecté (avec synchro abonnement)"""
+    from app.services.subscription_service import sync_user_premium_status
+    await sync_user_premium_status(str(current_user.id))
+    # Recharger depuis la DB pour avoir subscription_category à jour
+    from app.models.user import User
+    fresh = await User.get(current_user.id)
+    return fresh if fresh else current_user
 
 @router.patch("/me/location", response_model=UserOut)
 async def update_user_location(location: UserLocationUpdate, current_user=Depends(get_current_user)):
@@ -213,6 +218,7 @@ async def google_auth_callback(code: str = None, error: str = None):
         given_name = userinfo.get("given_name", "")
         family_name = userinfo.get("family_name", "")
         full_name = (f"{given_name}_{family_name}".strip("_") or email.split("@")[0]).replace(" ", "_")
+        google_picture = userinfo.get("picture", "")
 
         if not email:
             raise ValueError("Email non reçu de Google")
@@ -231,10 +237,15 @@ async def google_auth_callback(code: str = None, error: str = None):
                 email=email,
                 username=username,
                 hashed_password=_pwd_context.hash(fake_password),
+                avatar_url=google_picture or None,
             )
             await user.insert()
             print(f"[GoogleOAuth] Nouvel utilisateur créé: {username} ({email})")
         else:
+            # Mettre à jour l'avatar si l'utilisateur n'en a pas encore
+            if not user.avatar_url and google_picture:
+                user.avatar_url = google_picture
+                await user.save()
             print(f"[GoogleOAuth] Utilisateur existant: {user.username} ({email})")
 
         # Emit welcome notification for new users
@@ -254,6 +265,7 @@ async def google_auth_callback(code: str = None, error: str = None):
             "username": user.username,
             "is_premium": user.is_premium,
             "is_active": user.is_active,
+            "avatar_url": user.avatar_url,
         })
 
         # Rediriger vers le deep link de l'app mobile : bf1tv://oauth/callback?token=xxx
@@ -315,13 +327,20 @@ async def facebook_auth_callback(code: str = None, error: str = None, error_reas
             # Get user info from Facebook
             userinfo_resp = await client.get(
                 "https://graph.facebook.com/me",
-                params={"fields": "id,name,email", "access_token": access_token_fb},
+                params={"fields": "id,name,email,picture.width(200)", "access_token": access_token_fb},
             )
             userinfo = userinfo_resp.json()
 
         fb_id = userinfo.get("id", "")
         full_name = userinfo.get("name", "").replace(" ", "_")
         email = userinfo.get("email", "").lower().strip()
+        fb_picture = ""
+        try:
+            pic_data = userinfo.get("picture", {}).get("data", {})
+            if not pic_data.get("is_silhouette", True):
+                fb_picture = pic_data.get("url", "")
+        except Exception:
+            pass
 
         # Facebook may not provide email (phone-only accounts)
         if not email:
@@ -340,10 +359,15 @@ async def facebook_auth_callback(code: str = None, error: str = None, error_reas
                 email=email,
                 username=username,
                 hashed_password=_pwd_context.hash(fake_password),
+                avatar_url=fb_picture or None,
             )
             await user.insert()
             print(f"[FacebookOAuth] Nouvel utilisateur créé: {username} ({email})")
         else:
+            # Mettre à jour l'avatar si l'utilisateur n'en a pas encore
+            if not user.avatar_url and fb_picture:
+                user.avatar_url = fb_picture
+                await user.save()
             print(f"[FacebookOAuth] Utilisateur existant: {user.username} ({email})")
 
         # Emit welcome notification for new users
@@ -363,6 +387,7 @@ async def facebook_auth_callback(code: str = None, error: str = None, error_reas
             "username": user.username,
             "is_premium": user.is_premium,
             "is_active": user.is_active,
+            "avatar_url": user.avatar_url,
         })
 
         redirect_url = (
@@ -378,10 +403,83 @@ async def facebook_auth_callback(code: str = None, error: str = None, error_reas
         return RedirectResponse(url=error_url)
 
 
-@router.get("", response_model=List[UserOut])
-async def get_all_users(current_user=Depends(get_admin_user)):
-    """Lister tous les utilisateurs (admin seulement)"""
-    return await list_users()
+@router.get("")
+async def get_all_users(page: int = 1, limit: int = 20, current_user=Depends(get_admin_user)):
+    """Lister tous les utilisateurs (admin seulement) avec pagination"""
+    if limit > 100:
+        limit = 100
+    result = await list_users(page=page, limit=limit)
+    result["items"] = [UserOut(**u.dict()) for u in result["items"]]
+    return result
+
+
+@router.patch("/me", response_model=UserOut)
+async def update_my_profile(data: UserProfileUpdate, current_user=Depends(get_current_user)):
+    """Mettre à jour le profil de l'utilisateur connecté (username, email, phone, avatar)"""
+    import base64, uuid, os
+
+    if data.username is not None:
+        username = data.username.strip()
+        if len(username) < 3:
+            raise HTTPException(status_code=400, detail="Le pseudo doit faire au moins 3 caractères")
+        existing = await User.find_one({"username": username})
+        if existing and str(existing.id) != str(current_user.id):
+            raise HTTPException(status_code=409, detail="Ce pseudo est déjà pris")
+        current_user.username = username
+
+    if data.email is not None:
+        email = data.email.strip().lower()
+        existing = await User.find_one({"email": email})
+        if existing and str(existing.id) != str(current_user.id):
+            raise HTTPException(status_code=409, detail="Cet email est déjà utilisé")
+        current_user.email = email
+
+    if data.phone is not None:
+        current_user.phone = data.phone.strip()
+
+    if data.avatar is not None:
+        # Accepter les data URI base64 (ex: data:image/png;base64,...)
+        avatar_data = data.avatar
+        if avatar_data.startswith("data:"):
+            try:
+                header, b64data = avatar_data.split(",", 1)
+                mime = header.split(":")[1].split(";")[0]
+                ext_map = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif"}
+                ext = ext_map.get(mime, "png")
+                img_bytes = base64.b64decode(b64data)
+                if len(img_bytes) > 5 * 1024 * 1024:
+                    raise HTTPException(status_code=400, detail="Image trop volumineuse (max 5 Mo)")
+                # Sauvegarder temporairement puis upload vers Cloudinary
+                temp_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "temp_uploads")
+                os.makedirs(temp_dir, exist_ok=True)
+                filename = f"avatar_{current_user.id}_{uuid.uuid4().hex[:8]}.{ext}"
+                temp_path = os.path.join(temp_dir, filename)
+                with open(temp_path, "wb") as f:
+                    f.write(img_bytes)
+                try:
+                    from app.services.cloudinary_service import cloudinary_service
+                    result = cloudinary_service.upload_image(
+                        file_path=temp_path,
+                        folder="bf1/avatars",
+                        public_id=f"avatar_{current_user.id}"
+                    )
+                    current_user.avatar_url = result['url']
+                finally:
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
+            except HTTPException:
+                raise
+            except Exception as e:
+                print(f"Erreur upload avatar: {e}")
+                raise HTTPException(status_code=400, detail="Format d'image invalide")
+        else:
+            # URL directe
+            current_user.avatar_url = avatar_data
+
+    current_user.updated_at = datetime.utcnow()
+    await current_user.save()
+    return current_user
+
 
 @router.get("/{user_id}", response_model=UserOut)
 async def get_one_user(user_id: str, current_user=Depends(get_current_user)):
@@ -417,3 +515,18 @@ async def delete_one_user(user_id: str, current_user=Depends(get_admin_user)):
     if not deleted:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
     return {"ok": True}
+
+
+class BatchDeleteIds(BaseModel):
+    ids: List[str]
+
+@router.post("/delete-batch")
+async def delete_batch_users(body: BatchDeleteIds, current_user=Depends(get_admin_user)):
+    """Supprimer plusieurs utilisateurs en lot (admin seulement)"""
+    if not body.ids:
+        raise HTTPException(status_code=400, detail="Aucun ID fourni")
+    count = 0
+    for item_id in body.ids:
+        if await delete_user(item_id):
+            count += 1
+    return {"ok": True, "deleted": count}

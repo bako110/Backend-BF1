@@ -86,7 +86,7 @@ class SportService:
             filter_dict = {"is_active": True}
 
             if category and category != "toutes":
-                filter_dict["category"] = category
+                filter_dict["sport_type"] = {"$regex": f"^{category}$", "$options": "i"}
             if featured is not None:
                 filter_dict["featured"] = featured
             if is_new is not None:
@@ -104,7 +104,7 @@ class SportService:
                 sports = await Sport.find(filter_dict).sort("-created_at").skip(skip).limit(limit).to_list()
             except Exception:
                 try:
-                    sports = await Sport.find(filter_dict).skip(skip).limit(limit).to_list()
+                    sports = await Sport.find(filter_dict).sort("-created_at").skip(skip).limit(limit).to_list()
                 except Exception:
                     sports = []
 

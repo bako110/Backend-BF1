@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.utils.auth import get_admin_user, get_optional_user
-from app.schemas.emission_category import EmissionCategoryCreate, EmissionCategoryResponse, EmissionCategoryUpdate
+from app.schemas.emission_category import EmissionCategoryCreate, EmissionCategoryResponse, EmissionCategoryUpdate, build_filter_path
 from app.models.emission_category import EmissionCategory
 from typing import List
 from datetime import datetime
@@ -10,12 +10,13 @@ router = APIRouter()
 @router.post("", response_model=EmissionCategoryResponse)
 async def create_emission_category(category: EmissionCategoryCreate, current_user=Depends(get_admin_user)):
     """Créer une nouvelle catégorie d'émission (Admin uniquement)"""
-    # Vérifier si la catégorie existe déjà
     existing = await EmissionCategory.find_one(EmissionCategory.name == category.name)
     if existing:
         raise HTTPException(status_code=400, detail="Une catégorie avec ce nom existe déjà")
-    
-    new_category = EmissionCategory(**category.dict())
+
+    data = category.dict()
+    data["filter_path"] = build_filter_path(data.get("section"), data["name"])
+    new_category = EmissionCategory(**data)
     await new_category.insert()
     return new_category
 
@@ -53,14 +54,16 @@ async def update_emission_category(
         if existing:
             raise HTTPException(status_code=400, detail="Une catégorie avec ce nom existe déjà")
     
-    # Mettre à jour les champs
     update_data = data.dict(exclude_unset=True)
     if update_data:
         update_data["updated_at"] = datetime.utcnow()
         for field, value in update_data.items():
             setattr(category, field, value)
+        # Régénérer filter_path si name ou section a changé
+        if "name" in update_data or "section" in update_data:
+            category.filter_path = build_filter_path(category.section, category.name)
         await category.save()
-    
+
     return category
 
 

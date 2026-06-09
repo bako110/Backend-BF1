@@ -61,8 +61,11 @@ async def get_user(user_id: str) -> Optional[User]:
 	return await User.get(user_id)
 
 
-async def list_users() -> List[User]:
-	return await User.find_all().to_list()
+async def list_users(page: int = 1, limit: int = 20):
+	skip = (page - 1) * limit
+	total = await User.find_all().count()
+	items = await User.find_all().skip(skip).limit(limit).to_list()
+	return {"items": items, "total": total, "page": page, "limit": limit, "totalPages": -(-total // limit)}
 
 
 async def set_user_active(user_id: str, is_active: bool) -> Optional[User]:

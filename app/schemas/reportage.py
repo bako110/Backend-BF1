@@ -9,7 +9,7 @@ class ReportageBase(BaseModel):
     category: str = Field(..., min_length=1, max_length=80, description="Catégorie du reportage")
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
     thumbnail: Optional[HttpUrl] = Field(None, description="Miniature du reportage")
-    description: str = Field(..., min_length=1, max_length=5000, description="Description du reportage")
+    description: Optional[str] = Field(None, max_length=5000, description="Description du reportage")
     duration_minutes: int = Field(..., ge=1, le=600, description="Durée en minutes")
     program_title: Optional[str] = Field(None, min_length=1, max_length=200, description="Émission d'origine")
     host: Optional[str] = Field(None, min_length=1, max_length=120, description="Animateur / présentateur")
@@ -38,6 +38,13 @@ class ReportageUpdate(BaseModel):
     host: Optional[str] = Field(None, min_length=1, max_length=120)
     allow_comments: Optional[bool] = None
     aired_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+
+    @validator("video_url", "thumbnail", pre=True)
+    def empty_str_to_none(cls, v):
+        if v == "" or v is None:
+            return None
+        return v
 
 
 class ReportageOut(ReportageBase):

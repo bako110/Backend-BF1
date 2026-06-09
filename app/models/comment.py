@@ -5,8 +5,8 @@ from datetime import datetime
 
 class Comment(Document):
     user_id: str = Field(..., description="ID de l'utilisateur")
-    content_id: str = Field(..., description="ID du contenu (movie ou show)")
-    content_type: str = Field(..., description="Type de contenu : 'movie' ou 'show'")
+    content_id: str = Field(..., description="ID du contenu")
+    content_type: str = Field(..., description="Type de contenu : 'movie', 'show', 'sport', 'jtandmag', 'divertissement', 'reportage', 'archive', 'tele_realite', 'missed', etc.")
     text: str = Field(..., description="Texte du commentaire")
     is_hidden: bool = Field(False, description="Commentaire masqué (modération)")
     hidden_at: Optional[datetime] = Field(None)

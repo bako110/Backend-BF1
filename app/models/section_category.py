@@ -7,11 +7,14 @@ from typing import Optional
 # Valeurs fixes des grandes sections — à utiliser comme clé `section`
 SECTIONS = {
     "flash_infos": "Flash Infos",
-    "jtandmag": "JT et Mag",
+    "jtandmag": "Journal",
+    "magazine": "Magazine",
     "reportage": "Reportages",
     "divertissement": "Divertissement et Mag",
     "sport": "Sport",
     "tele_realite": "Télé Réalité et Événements",
+    "missed": "Contenus Manqués",
+    "archive": "Archives",
 }
 
 
@@ -22,7 +25,7 @@ class SectionCategory(Document):
         ...,
         description=(
             "Grande section parente. Valeurs : "
-            "flash_infos | jtandmag | reportage | divertissement | sport | tele_realite"
+            "flash_infos | jtandmag | magazine | reportage | divertissement | sport | tele_realite | missed | archive"
         ),
     )
     name: str = Field(..., description="Nom de la sous-catégorie (ex: 13h, LTS, Marathon)")

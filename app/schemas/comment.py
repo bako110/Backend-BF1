@@ -7,17 +7,22 @@ class CommentBase(BaseModel):
     content_id: str = Field(..., description="ID du contenu")
     content_type: Literal[
         "teleRealite",
+        "tele_realite",
         "breaking_news",
         "reportage",
         "divertissement",
         "jtandmag",
+        "magazine",
         "popular_program",
         "archive",
         "program",
         "sport",
         "reel",
         "emission_category",
-        "series"
+        "series",
+        "missed",
+        "movie",
+        "livestream"
     ] = Field(..., description="Type de contenu")
     text: str = Field(..., min_length=1, max_length=1000, description="Texte du commentaire")
 
@@ -34,6 +39,7 @@ class CommentOut(CommentBase):
     id: str
     user_id: str
     username: Optional[str] = None
+    avatar_url: Optional[str] = None
     is_hidden: bool = False
     hidden_at: Optional[datetime] = None
     created_at: datetime

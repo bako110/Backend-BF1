@@ -9,7 +9,7 @@ from datetime import datetime
 class Favorite(Document):
     user_id: str = Field(..., description="ID de l'utilisateur")
     content_id: str = Field(..., description="ID du contenu")
-    content_type: str = Field(..., description="Type de contenu")
+    content_type: str = Field(..., description="Type de contenu : 'movie', 'show', 'sport', 'jtandmag', 'divertissement', 'reportage', 'archive', 'tele_realite', 'missed', etc.")
     added_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:

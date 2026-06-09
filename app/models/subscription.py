@@ -23,5 +23,6 @@ class Subscription(Document):
             "user_id",
             "is_active",
             "end_date",
-            [("user_id", 1), ("is_active", -1)]
+            [("user_id", 1), ("is_active", -1)],
+            [("is_active", 1), ("end_date", 1)],
         ]

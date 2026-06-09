@@ -8,7 +8,7 @@ class ArchiveBase(BaseModel):
     image: Optional[HttpUrl] = None
     thumbnail: Optional[HttpUrl] = None
     video_url: Optional[HttpUrl] = None
-    description: str
+    description: Optional[str] = None
     duration_minutes: int
     is_premium: bool = True
     price: float = 0.0
@@ -21,7 +21,7 @@ class ArchiveBase(BaseModel):
 
 class ArchiveCreate(BaseModel):
     title: str
-    description: str
+    description: Optional[str] = None
     category: Optional[str] = None
     thumbnail: Optional[HttpUrl] = None
     video_url: Optional[HttpUrl] = None
@@ -52,6 +52,7 @@ class ArchiveUpdate(BaseModel):
     archived_date: Optional[datetime] = None
     original_publish_date: Optional[datetime] = None
     is_active: Optional[bool] = None
+    created_at: Optional[datetime] = None
 
 
 class ArchiveOut(ArchiveBase):

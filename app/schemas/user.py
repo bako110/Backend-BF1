@@ -9,6 +9,7 @@ class UserBase(BaseModel):
     is_active: bool = True
     is_premium: bool = False
     subscription_category: Optional[str] = None
+    avatar_url: Optional[str] = None
     location_country_code: Optional[str] = None
     location_is_in_country: Optional[bool] = None
     location_latitude: Optional[float] = None
@@ -45,3 +46,9 @@ class UserLocationUpdate(BaseModel):
 class FcmTokenUpdate(BaseModel):
     fcm_token: str
     platform: Optional[str] = "web"  # web, android, ios
+
+class UserProfileUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    avatar: Optional[str] = None  # base64 data URI

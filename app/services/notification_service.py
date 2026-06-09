@@ -1,8 +1,11 @@
 
 from app.models.notification import Notification
+from app.models.admin_notification import AdminNotification
 from app.schemas.notification import NotificationCreate
 from app.models.user import User
 from typing import List, Optional
+from datetime import datetime
+import math
 
 async def delete_notification(notif_id: str, user_id: str) -> bool:
 	try:
@@ -88,6 +91,14 @@ async def send_global_notification(title: str, message: str, category: Optional[
 			)
 			await notification.insert()
 			count += 1
+		# Save admin broadcast record
+		admin_notif = AdminNotification(
+			title=title,
+			message=message,
+			category=category or "admin",
+			recipients=count
+		)
+		await admin_notif.insert()
 		print(f"✅ [NotificationService] Notification globale envoyée à {count} utilisateurs")
 		return count
 	except Exception as e:
@@ -240,3 +251,57 @@ async def send_premium_notification(user_id: str):
 	except Exception as e:
 		print(f"❌ Erreur envoi notification premium: {e}")
 		return None
+
+
+# ============ ADMIN CRUD (collection admin_notifications) ============
+
+async def admin_list_notifications(page: int = 1, limit: int = 20):
+	"""Liste les notifications creees par l'admin (collection separee)"""
+	total = await AdminNotification.count()
+	skip = (page - 1) * limit
+	items_raw = await AdminNotification.find_all().sort("-created_at").skip(skip).limit(limit).to_list()
+
+	items = []
+	for n in items_raw:
+		items.append({
+			"id": str(n.id),
+			"title": n.title,
+			"message": n.message,
+			"category": n.category or "admin",
+			"recipients": n.recipients,
+			"created_at": n.created_at.isoformat() if n.created_at else None,
+		})
+
+	return {
+		"items": items,
+		"total": total,
+		"page": page,
+		"limit": limit,
+		"totalPages": math.ceil(total / limit) if total else 1,
+	}
+
+
+async def admin_update_notification(notif_id: str, new_title: str, new_message: str, new_category: str):
+	"""Met a jour une notification admin par son ID"""
+	notif = await AdminNotification.get(notif_id)
+	if not notif:
+		return None
+	notif.title = new_title
+	notif.message = new_message
+	notif.category = new_category
+	await notif.save()
+	return notif
+
+
+async def admin_delete_notifications(ids: list) -> int:
+	"""Supprime plusieurs notifications admin par leurs IDs"""
+	count = 0
+	for nid in ids:
+		try:
+			notif = await AdminNotification.get(nid)
+			if notif:
+				await notif.delete()
+				count += 1
+		except Exception:
+			continue
+	return count

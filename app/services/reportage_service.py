@@ -14,8 +14,13 @@ async def get_reportage(reportage_id: str) -> Optional[Reportage]:
 	return await Reportage.get(reportage_id)
 
 
-async def list_reportages(skip: int = 0, limit: int = 50) -> List[Reportage]:
-	return await Reportage.find_all().skip(skip).limit(limit).to_list()
+async def list_reportages(skip: int = 0, limit: int = 50, category: Optional[str] = None) -> dict:
+	query = {}
+	if category:
+		query["category"] = {"$regex": f"^{category}$", "$options": "i"}
+	total = await Reportage.find(query).count()
+	items = await Reportage.find(query).sort(-Reportage.created_at).skip(skip).limit(limit).to_list()
+	return {"items": items, "total": total, "skip": skip, "limit": limit}
 
 
 async def update_reportage(reportage_id: str, data: ReportageUpdate) -> Optional[Reportage]:

@@ -6,11 +6,13 @@ from app.models.divertissement import Divertissement
 from app.models.reel import Reel
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
+from app.models.magazine import Magazine
 from app.models.sport import Sport
 from app.models.emission_category import EmissionCategory
 from app.models.series import Series
 from app.models.archive import Archive
 from app.models.tele_realite import TeleRealite
+from app.models.missed import Missed
 
 
 CONTENT_MODELS = {
@@ -20,12 +22,14 @@ CONTENT_MODELS = {
     "reel": Reel,
     "reportage": Reportage,
     "jtandmag": JTandMag,
+    "magazine": Magazine,
     "sport": Sport,
     "emission_category": EmissionCategory,
     "series": Series,
     "archive": Archive,
     "tele_realite": TeleRealite,
     "event": TeleRealite,
+    "missed": Missed,
 }
 
 
@@ -53,3 +57,7 @@ async def increment_comment(content_type: str, content_id: str, delta: int) -> N
 
 async def increment_share(content_type: str, content_id: str, delta: int) -> None:
     await _update_counter(content_type, content_id, "shares", delta)
+
+
+async def increment_view(content_type: str, content_id: str, delta: int = 1) -> None:
+    await _update_counter(content_type, content_id, "views", delta)

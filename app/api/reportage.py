@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
+from pydantic import BaseModel
 from app.utils.auth import get_admin_user, get_optional_user
 from app.schemas.reportage import ReportageCreate, ReportageUpdate, ReportageOut
 from app.services.reportage_service import create_reportage, get_reportage, list_reportages, update_reportage, delete_reportage
@@ -17,10 +18,13 @@ async def add_reportage(reportage: ReportageCreate, current_user=Depends(get_adm
 async def get_all_reportages(
 	skip: int = Query(0, ge=0),
 	limit: int = Query(20, ge=1, le=500),
+	category: Optional[str] = Query(None, description="Filtrer par catégorie"),
 	search: Optional[str] = None,
 	current_user=Depends(get_optional_user)
 ):
 	query = {}
+	if category:
+		query["category"] = {"$regex": f"^{category}$", "$options": "i"}
 	if search:
 		search_lower = search.strip()
 		query["$or"] = [
@@ -31,7 +35,7 @@ async def get_all_reportages(
 		]
 
 	total = await Reportage.find(query).count()
-	items = await Reportage.find(query).skip(skip).limit(limit).to_list()
+	items = await Reportage.find(query).sort("-created_at").skip(skip).limit(limit).to_list()
 
 	return {"items": items, "total": total, "skip": skip, "limit": limit}
 
@@ -58,3 +62,17 @@ async def delete_one_reportage(reportage_id: str, current_user=Depends(get_admin
 	if not success:
 		raise HTTPException(status_code=404, detail="Reportage not found")
 	return {"message": "Reportage deleted successfully"}
+
+
+class BatchDeleteIds(BaseModel):
+	ids: List[str]
+
+@router.post("/delete-batch")
+async def delete_batch_reportage(body: BatchDeleteIds, current_user=Depends(get_admin_user)):
+	if not body.ids:
+		raise HTTPException(status_code=400, detail="Aucun ID fourni")
+	count = 0
+	for item_id in body.ids:
+		if await delete_reportage(item_id):
+			count += 1
+	return {"ok": True, "deleted": count}

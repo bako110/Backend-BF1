@@ -47,6 +47,7 @@ class Settings(BaseSettings):
 
     # Variables manquantes du .env
     LIVE_HLS_URL: str = os.getenv("LIVE_HLS_URL", "")
+    LIVE_DAILYMOTION_URL: str = os.getenv("LIVE_DAILYMOTION_URL", "")
     GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
     GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
     GOOGLE_REDIRECT_URI: str = os.getenv("GOOGLE_REDIRECT_URI", "")

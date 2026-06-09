@@ -13,7 +13,7 @@ class Archive(Document):
     thumbnail: Optional[HttpUrl] = Field(None, description="Miniature de l'archive")
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
     
-    description: str = Field(..., description="Description ou contenu de l'archive")
+    description: Optional[str] = Field(None, description="Description ou contenu de l'archive")
     duration_minutes: Optional[int] = Field(default=30, description="Durée en minutes")
     
     # Informations de paiement
@@ -44,3 +44,13 @@ class Archive(Document):
 
     class Settings:
         name = "archives"
+        indexes = [
+            "category",
+            "is_active",
+            "is_premium",
+            [("created_at", -1)],
+            [("archived_date", -1)],
+            [("is_active", 1), ("is_premium", 1), ("archived_date", -1)],
+            [("popularity_score", -1)],
+            [("title", "text"), ("description", "text")],
+        ]

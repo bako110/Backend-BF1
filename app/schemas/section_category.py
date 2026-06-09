@@ -7,10 +7,13 @@ import re
 VALID_SECTIONS = {
     "flash_infos",
     "jtandmag",
+    "magazine",
     "reportage",
     "divertissement",
     "sport",
     "tele_realite",
+    "missed",
+    "archive",
 }
 
 
@@ -29,7 +32,7 @@ def _slugify(value: str) -> str:
 class SectionCategoryBase(BaseModel):
     section: str = Field(
         ...,
-        description="Grande section : flash_infos | jtandmag | reportage | divertissement | sport | tele_realite",
+        description="Grande section : flash_infos | jtandmag | magazine | reportage | divertissement | sport | tele_realite | missed | archive",
     )
     name: str = Field(..., min_length=1, max_length=100, description="Nom de la sous-catégorie")
     description: Optional[str] = Field(None, max_length=500)

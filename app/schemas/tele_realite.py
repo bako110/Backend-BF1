@@ -11,7 +11,7 @@ class TeleRealiteBase(BaseModel):
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
     thumbnail: Optional[HttpUrl] = Field(None, description="Miniature")
     image: Optional[HttpUrl] = Field(None, description="Image principale")
-    description: str = Field(..., min_length=1, max_length=5000, description="Description")
+    description: Optional[str] = Field(None, max_length=5000, description="Description")
     duration_minutes: Optional[int] = Field(None, ge=1, le=1440, description="Durée en minutes")
     host: Optional[str] = Field(None, min_length=1, max_length=120, description="Animateur")
     location: Optional[str] = Field(None, min_length=1, max_length=200, description="Lieu")
@@ -40,16 +40,29 @@ class TeleRealiteUpdate(BaseModel):
     video_url: Optional[HttpUrl] = None
     thumbnail: Optional[HttpUrl] = None
     image: Optional[HttpUrl] = None
-    description: Optional[str] = Field(None, min_length=1, max_length=5000)
+    description: Optional[str] = Field(None, max_length=5000)
     duration_minutes: Optional[int] = Field(None, ge=1, le=1440)
-    host: Optional[str] = Field(None, min_length=1, max_length=120)
-    location: Optional[str] = Field(None, min_length=1, max_length=200)
+    host: Optional[str] = Field(None, max_length=120)
+    location: Optional[str] = Field(None, max_length=200)
     participants: Optional[List[str]] = None
     allow_comments: Optional[bool] = None
     is_live: Optional[bool] = None
     is_upcoming: Optional[bool] = None
     aired_at: Optional[datetime] = None
     event_date: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+
+    @validator("video_url", "thumbnail", "image", pre=True)
+    def empty_str_to_none_url(cls, v):
+        if v == "" or v is None:
+            return None
+        return v
+
+    @validator("description", "host", "location", "sub_type", "title", "category", pre=True)
+    def empty_str_to_none_str(cls, v):
+        if v == "":
+            return None
+        return v
 
 
 class TeleRealiteOut(TeleRealiteBase):

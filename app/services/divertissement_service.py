@@ -14,8 +14,13 @@ async def get_divertissement(divertissement_id: str) -> Optional[Divertissement]
 	return await Divertissement.get(divertissement_id)
 
 
-async def list_divertissement(skip: int = 0, limit: int = 50) -> List[Divertissement]:
-	return await Divertissement.find_all().sort(-Divertissement.created_at).skip(skip).limit(limit).to_list()
+async def list_divertissement(skip: int = 0, limit: int = 50, category: Optional[str] = None) -> dict:
+	query = {}
+	if category:
+		query["category"] = {"$regex": f"^{category}$", "$options": "i"}
+	total = await Divertissement.find(query).count()
+	items = await Divertissement.find(query).sort(-Divertissement.created_at).skip(skip).limit(limit).to_list()
+	return {"items": items, "total": total, "skip": skip, "limit": limit}
 
 
 async def update_divertissement(divertissement_id: str, data: DivertissementUpdate) -> Optional[Divertissement]:

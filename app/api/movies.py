@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
 from app.utils.auth import get_current_user, get_admin_user, get_optional_user
 from app.schemas.movie import MovieCreate, MovieOut, MovieUpdate
 from app.services.movie_service import create_movie, get_movie, get_movie_with_stats, list_movies, update_movie, delete_movie
@@ -55,4 +56,19 @@ async def delete_one_movie(movie_id: str, current_user=Depends(get_current_user)
 	if not deleted:
 		raise HTTPException(status_code=404, detail="Movie not found")
 	return {"ok": True}
+
+
+class BatchDeleteIds(BaseModel):
+	ids: List[str]
+
+@router.post("/delete-batch")
+async def delete_batch_movie(body: BatchDeleteIds, current_user=Depends(get_admin_user)):
+	"""Supprimer plusieurs films en lot (admin seulement)"""
+	if not body.ids:
+		raise HTTPException(status_code=400, detail="Aucun ID fourni")
+	count = 0
+	for item_id in body.ids:
+		if await delete_movie(item_id):
+			count += 1
+	return {"ok": True, "deleted": count}
 # Endpoints films

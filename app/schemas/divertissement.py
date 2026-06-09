@@ -9,7 +9,7 @@ class DivertissementBase(BaseModel):
     category: str = Field(..., min_length=1, max_length=80, description="Catégorie")
     image: Optional[HttpUrl] = Field(None, description="Image du divertissement")
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
-    description: str = Field(..., min_length=1, max_length=5000, description="Description ou contenu du divertissement")
+    description: Optional[str] = Field(None, max_length=5000, description="Description ou contenu du divertissement")
     host: Optional[str] = Field(None, min_length=1, max_length=120, description="Animateur / présentateur")
     allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
@@ -42,6 +42,13 @@ class DivertissementUpdate(BaseModel):
     rating: Optional[float] = Field(None, ge=0, le=5)
 
     published_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+
+    @validator("image", "video_url", pre=True)
+    def empty_str_to_none(cls, v):
+        if v == "" or v is None:
+            return None
+        return v
 
 
 class DivertissementOut(DivertissementBase):

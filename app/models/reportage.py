@@ -11,7 +11,7 @@ class Reportage(Document):
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
     thumbnail: Optional[HttpUrl] = Field(None, description="Miniature du reportage")
 
-    description: str = Field(..., description="Description du reportage")
+    description: Optional[str] = Field(None, description="Description du reportage")
     duration_minutes: int = Field(..., description="Durée en minutes")
 
     program_title: Optional[str] = Field(None, description="Émission d'origine")
@@ -28,3 +28,11 @@ class Reportage(Document):
 
     class Settings:
         name = "reportages"
+        indexes = [
+            "category",
+            [("aired_at", -1)],
+            [("created_at", -1)],
+            [("category", 1), ("aired_at", -1)],
+            [("views", -1)],
+            [("title", "text"), ("description", "text")],
+        ]

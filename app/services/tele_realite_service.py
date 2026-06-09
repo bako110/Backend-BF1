@@ -18,11 +18,14 @@ async def list_tele_realite(
     skip: int = 0,
     limit: int = 20,
     sub_type: Optional[str] = None,
+    category: Optional[str] = None,
     search: Optional[str] = None,
 ) -> dict:
     query = {}
     if sub_type:
         query["sub_type"] = sub_type
+    if category:
+        query["category"] = {"$regex": f"^{category}$", "$options": "i"}
     if search:
         query["$or"] = [
             {"title": {"$regex": search, "$options": "i"}},

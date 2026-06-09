@@ -4,10 +4,10 @@ from typing import Optional
 from bson import ObjectId
 
 
-class JTandMagBase(BaseModel):
-    title: str = Field(..., min_length=1, max_length=200, description="Titre de l'émission")
+class MagazineBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200, description="Titre du magazine")
     category: str = Field(..., min_length=1, max_length=80, description="Catégorie")
-    image: Optional[HttpUrl] = Field(None, description="Image de l'émission")
+    image: Optional[HttpUrl] = Field(None, description="Image du magazine")
     video_url: Optional[str] = Field(None, description="URL de la vidéo (YouTube ou directe)")
     description: Optional[str] = Field(None, max_length=5000, description="Description")
     host: Optional[str] = Field(None, min_length=1, max_length=120, description="Animateur / présentateur")
@@ -23,11 +23,11 @@ class JTandMagBase(BaseModel):
         return v
 
 
-class JTandMagCreate(JTandMagBase):
+class MagazineCreate(MagazineBase):
     pass
 
 
-class JTandMagUpdate(BaseModel):
+class MagazineUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     category: Optional[str] = Field(None, min_length=1, max_length=80)
     image: Optional[HttpUrl] = None
@@ -46,7 +46,7 @@ class JTandMagUpdate(BaseModel):
         return v
 
 
-class JTandMagOut(JTandMagBase):
+class MagazineOut(MagazineBase):
     id: str
     views: int = Field(0, ge=0, description="Nombre de vues")
     likes: int = Field(0, ge=0, description="Nombre de likes")

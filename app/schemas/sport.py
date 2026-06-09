@@ -69,8 +69,10 @@ class SportUpdate(BaseModel):
     """Schéma pour la mise à jour d'un sport"""
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = Field(None, max_length=2000)
-    category: Optional[CategoryEnum] = None
+    category: Optional[str] = None
     subcategory: Optional[str] = Field(None, max_length=50)
+    sport_type: Optional[str] = Field(None, max_length=100)
+    teams: Optional[List[str]] = None
     image: Optional[str] = Field(None, max_length=500)
     thumbnail: Optional[str] = Field(None, max_length=500)
     video_url: Optional[str] = Field(None, max_length=500)
@@ -81,6 +83,7 @@ class SportUpdate(BaseModel):
     featured: Optional[bool] = None
     is_new: Optional[bool] = None
     is_active: Optional[bool] = None
+    created_at: Optional[datetime] = None
 
     @validator('tags')
     def validate_tags(cls, v):

@@ -9,7 +9,7 @@ class Divertissement(Document):
     category: str = Field(..., description="Catégorie du divertissement")
     image: Optional[HttpUrl] = Field(None, description="Image du divertissement")
     video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
-    description: str = Field(..., description="Description ou contenu du divertissement")
+    description: Optional[str] = Field(None, description="Description ou contenu du divertissement")
     allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 
     duration_minutes: Optional[int] = Field(default=30, description="Durée en minutes")
@@ -23,3 +23,10 @@ class Divertissement(Document):
 
     class Settings:
         name = "divertissements"
+        indexes = [
+            "category",
+            [("created_at", -1)],
+            [("category", 1), ("created_at", -1)],
+            [("views", -1)],
+            [("title", "text"), ("description", "text")],
+        ]

@@ -12,6 +12,15 @@ bearer_scheme = HTTPBearer()
 optional_bearer_scheme = HTTPBearer(auto_error=False)
 
 
+def decode_token(token: str) -> Optional[dict]:
+    """Décoder un JWT sans dépendance FastAPI — utilisé pour les vérifications WebSocket."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload if payload.get("sub") else None
+    except JWTError:
+        return None
+
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     credentials_exception = HTTPException(
         status_code=401,

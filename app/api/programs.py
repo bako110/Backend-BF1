@@ -2,6 +2,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 from datetime import datetime
+from pydantic import BaseModel
 
 from app.utils.auth import get_current_user, get_admin_user, get_optional_user
 from app.schemas.program import (
@@ -97,59 +98,22 @@ async def list_programs(
 ):
     """Lister les programmes avec filtres et recherche complète"""
     
-    # Si un terme de recherche est fourni, faire une recherche complète
+    # Si un terme de recherche est fourni, requête regex directe en base
     if search:
-        search_lower = search.lower()
-        print(f"🔍 [PROGRAMS] Recherche complète: '{search}'")
-        
-        # Obtenir tous les programmes sans pagination d'abord
-        all_programs = await program_service.list_programs_raw(
-            date=params.date,
-            start_date=params.start_date,
-            end_date=params.end_date,
-            type=params.type,
-            category=params.category,
-            channel_id=params.channel_id,
-            is_live=params.is_live,
-            has_replay=params.has_replay,
-            host=params.host,
-            skip=0,
-            limit=1000  # Grande limite pour obtenir tous
-        )
-        
-        # Recherche complète dans tous les champs
-        filtered_programs = []
-        for program in all_programs:
-            # Recherche dans tous les champs disponibles
-            title_match = search_lower in program.title.lower()
-            desc_match = hasattr(program, 'description') and program.description and search_lower in program.description.lower()
-            host_match = hasattr(program, 'host') and program.host and search_lower in program.host.lower()
-            category_match = hasattr(program, 'category') and program.category and search_lower in program.category.lower()
-            type_match = hasattr(program, 'type') and program.type and search_lower in program.type.lower()
-            channel_match = hasattr(program, 'channel_name') and program.channel_name and search_lower in program.channel_name.lower()
-            tags_match = hasattr(program, 'tags') and program.tags and any(search_lower in tag.lower() for tag in program.tags)
-            duration_match = hasattr(program, 'duration') and program.duration and search_lower in str(program.duration).lower()
-            
-            if title_match or desc_match or host_match or category_match or type_match or channel_match or tags_match or duration_match:
-                filtered_programs.append(program)
-                print(f"✅ [PROGRAMS] Match trouvé: '{program.title}' (titre:{title_match}, desc:{desc_match}, host:{host_match}, cat:{category_match})")
-        
-        print(f"🎯 [PROGRAMS] Résultats après recherche complète: {len(filtered_programs)}")
-        
-        # Pagination sur les résultats filtrés
-        total_filtered = len(filtered_programs)
-        start = params.skip or 0
-        end = start + (params.limit or 20)
-        paginated_programs = filtered_programs[start:end]
-        
-        # Retourner avec métadonnées de pagination
-        return {
-            "programs": paginated_programs,
-            "total": total_filtered,
-            "skip": start,
-            "limit": params.limit or 20,
-            "has_more": end < total_filtered
-        }
+        from app.models.program import Program as ProgramModel
+        regex = {"$regex": search.strip(), "$options": "i"}
+        mongo_query = {"$or": [
+            {"title": regex},
+            {"description": regex},
+            {"host": regex},
+            {"category": regex},
+            {"type": regex},
+            {"channel_name": regex},
+        ]}
+        skip = params.skip or 0
+        lim = params.limit or 20
+        programs = await ProgramModel.find(mongo_query).sort(+ProgramModel.start_time).skip(skip).limit(lim).to_list()
+        return programs
     
     # Recherche normale sans terme de recherche
     programs = await program_service.list_programs(
@@ -218,6 +182,24 @@ async def delete_program(
     return {"ok": True, "message": "Programme supprimé"}
 
 
+class BatchDeleteIds(BaseModel):
+    ids: List[str]
+
+@router.post("/delete-batch", tags=["Programs"])
+async def delete_batch_programs(
+    body: BatchDeleteIds,
+    current_user=Depends(get_admin_user)
+):
+    """Supprimer plusieurs programmes en lot (admin seulement)"""
+    if not body.ids:
+        raise HTTPException(status_code=400, detail="Aucun ID fourni")
+    count = 0
+    for item_id in body.ids:
+        if await program_service.delete_program(item_id):
+            count += 1
+    return {"ok": True, "deleted": count}
+
+
 @router.post("/{program_id}/live", response_model=ProgramOut, tags=["Programs"])
 async def mark_program_live(
     program_id: str,
@@ -243,10 +225,15 @@ async def get_program_week(
     Récupère la grille des programmes de la semaine, groupés par jour.
     Retourne aussi les types disponibles pour le filtrage.
     """
-    result = await program_service.get_program_week(
-        weeks_ahead=weeks_ahead,
-        type=type
-    )
+    from app.utils.cache import cache_manager
+    cache_key = f"programs:week:{weeks_ahead}:{type or 'all'}"
+    cached = await cache_manager.get(cache_key)
+    if cached:
+        return cached
+
+    result = await program_service.get_program_week(weeks_ahead=weeks_ahead, type=type)
+    # Cache 15 min — la grille hebdo ne change pas à la minute
+    await cache_manager.set(cache_key, result, ttl=900)
     return result
 
 

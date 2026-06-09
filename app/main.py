@@ -25,9 +25,10 @@ from app.api import (
     contact, comments, likes, messages, jtandmag, reel, reportage, divertissement, shares,
     programs, stats, user_settings, support, about, archives, liveStream, upload, views, username_generator,
     websocket, subscription_plans, emission_categories, search, series, carousel,
-    tele_realite, section_categories
+    tele_realite, section_categories, missed
 )
 from app.api import sport
+from app.api import magazine
 from app.core.scheduler import start_scheduler, stop_scheduler
 
 
@@ -140,11 +141,13 @@ api_v1_router.include_router(user_settings.router, prefix="/settings", tags=["Us
 api_v1_router.include_router(breakingNews.router, prefix="/news", tags=["News"])
 api_v1_router.include_router(liveStream.router, prefix="/livestream", tags=["Live Stream"])
 api_v1_router.include_router(programs.router, prefix="/programs", tags=["Programs"])
-api_v1_router.include_router(jtandmag.router, prefix="/jtandmag", tags=["JT and Magazines"])
+api_v1_router.include_router(jtandmag.router, prefix="/jtandmag", tags=["Journal"])
+api_v1_router.include_router(magazine.router, prefix="/magazine", tags=["Magazine"])
 api_v1_router.include_router(reportage.router, prefix="/reportage", tags=["Reportages"])
 api_v1_router.include_router(reel.router, prefix="/reels", tags=["Reels"])
 api_v1_router.include_router(divertissement.router, prefix="/divertissement", tags=["Divertissement"])
 api_v1_router.include_router(sport.router, prefix="/sports", tags=["Sports"])
+api_v1_router.include_router(missed.router, prefix="/missed", tags=["Missed Content"])
 # api_v1_router.include_router(series.router, prefix="/tv", tags=["TV Series"])
 api_v1_router.include_router(tele_realite.router, prefix="/tele-realite", tags=["Télé Réalité & Événements"])
 api_v1_router.include_router(archives.router, prefix="/archives", tags=["Archives"])
@@ -183,8 +186,8 @@ api_v1_router.include_router(upload.router, prefix="/upload", tags=["Upload"])
 # api_v1_router.include_router(uploads.router, prefix="/uploads", tags=["Uploads"])
 api_v1_router.include_router(stats.router, prefix="/stats", tags=["Statistics"])
 
-# WebSocket router
-app.include_router(websocket.router)
+# WebSocket router — monté dans api_v1 pour que /api/v1/ws/... fonctionne
+api_v1_router.include_router(websocket.router, tags=["WebSocket"])
 
 # Monter le router API v1
 app.include_router(api_v1_router)
@@ -200,8 +203,6 @@ async def custom_swagger_ui_html():
         openapi_url=app.openapi_url,
         title=app.title + " - Swagger UI",
         oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
-        swagger_js_url="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js",
-        swagger_css_url="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css",
     )
 
 # Routes racine

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
+from pydantic import BaseModel
 from app.utils.auth import get_admin_user, get_optional_user
 from app.schemas.divertissement import DivertissementCreate, DivertissementUpdate, DivertissementOut
 from app.services.divertissement_service import (
@@ -19,17 +20,19 @@ async def add_divertissement(divertissement: DivertissementCreate, current_user=
 async def get_all_divertissement(
 	skip: int = Query(0, ge=0),
 	limit: int = Query(20, ge=1, le=500),
+	category: Optional[str] = Query(None, description="Filtrer par catégorie : REEM WAKATO | LA TÉLÉ S'AMUZ | BF1 SHOWTIMES"),
 	search: Optional[str] = None,
 	current_user=Depends(get_optional_user)
 ):
 	query = {}
+	if category:
+		query["category"] = {"$regex": f"^{category}$", "$options": "i"}
 	if search:
 		search_lower = search.strip()
 		query["$or"] = [
 			{"title": {"$regex": search_lower, "$options": "i"}},
 			{"description": {"$regex": search_lower, "$options": "i"}},
 			{"category": {"$regex": search_lower, "$options": "i"}},
-			{"tags": {"$in": [search_lower]}},
 		]
 
 	total = await Divertissement.find(query).count()
@@ -60,3 +63,17 @@ async def delete_one_divertissement(divertissement_id: str, current_user=Depends
 	if not success:
 		raise HTTPException(status_code=404, detail="Divertissement not found")
 	return {"message": "Divertissement deleted successfully"}
+
+
+class BatchDeleteIds(BaseModel):
+	ids: List[str]
+
+@router.post("/delete-batch")
+async def delete_batch_divertissement(body: BatchDeleteIds, current_user=Depends(get_admin_user)):
+	if not body.ids:
+		raise HTTPException(status_code=400, detail="Aucun ID fourni")
+	count = 0
+	for item_id in body.ids:
+		if await delete_divertissement(item_id):
+			count += 1
+	return {"ok": True, "deleted": count}

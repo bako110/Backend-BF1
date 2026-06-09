@@ -13,7 +13,7 @@ class TeleRealite(Document):
     thumbnail: Optional[HttpUrl] = Field(None, description="Miniature")
     image: Optional[HttpUrl] = Field(None, description="Image principale")
 
-    description: str = Field(..., description="Description de l'émission ou de l'événement")
+    description: Optional[str] = Field(None, description="Description de l'émission ou de l'événement")
     duration_minutes: Optional[int] = Field(None, ge=1, le=1440, description="Durée en minutes")
 
     host: Optional[str] = Field(None, description="Animateur / présentateur")
@@ -35,3 +35,12 @@ class TeleRealite(Document):
 
     class Settings:
         name = "tele_realite"
+        indexes = [
+            "category",
+            "sub_type",
+            "is_live",
+            "is_upcoming",
+            [("created_at", -1)],
+            [("sub_type", 1), ("created_at", -1)],
+            [("title", "text"), ("description", "text")],
+        ]

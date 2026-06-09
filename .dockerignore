@@ -96,6 +96,15 @@ QUICK_START_ARCHIVES.md
 API_DOCUMENTATION.md
 CLOUDINARY_SETUP.md
 
+# Fly.io (supprimé)
+fly.toml
+flyctl.exe
+install_flyctl.bat
+
+# Docker Compose (pas besoin dans l'image)
+docker-compose.yml
+.env.example
+
 # Docs
 docs/
 

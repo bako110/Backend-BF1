@@ -17,6 +17,9 @@ from app.models.like import Like
 from app.models.favorite import Favorite
 from app.models.sport import Sport
 from app.models.tele_realite import TeleRealite
+from app.models.magazine import Magazine
+from app.models.archive import Archive
+from app.models.missed import Missed
 
 router = APIRouter()
 
@@ -79,9 +82,14 @@ async def safe_calculate_growth(model, field_name: str = "created_at") -> Dict[s
 @router.get("/dashboard")
 async def get_dashboard_stats():
     """Récupère toutes les statistiques pour le dashboard avec croissance"""
-    
+    from app.utils.cache import cache_manager
     import asyncio
-    
+
+    cache_key = "stats:dashboard"
+    cached = await cache_manager.get(cache_key)
+    if cached:
+        return cached
+
     # Exécuter tous les calculs en parallèle pour améliorer les performances
     results = await asyncio.gather(
         safe_calculate_growth(User),
@@ -98,23 +106,31 @@ async def get_dashboard_stats():
         safe_calculate_growth(Favorite),
         safe_calculate_growth(Sport),
         safe_calculate_growth(TeleRealite),
+        safe_calculate_growth(Magazine),
+        safe_calculate_growth(Archive),
+        safe_calculate_growth(Missed),
     )
 
     stats = {
-        "users": results[0],
-        "movies": results[1],
-        "reportages": results[2],
-        "reels": results[3],
+        "users":           results[0],
+        "movies":          results[1],
+        "reportages":      results[2],
+        "reels":           results[3],
         "divertissements": results[4],
-        "programs": results[5],
-        "news": results[6],
-        "jtandmag": results[7],
-        "subscriptions": results[8],
-        "comments": results[9],
-        "likes": results[10],
-        "favorites": results[11],
-        "sports": results[12],
-        "tele_realite": results[13],
+        "programs":        results[5],
+        "news":            results[6],
+        "jtandmag":        results[7],
+        "subscriptions":   results[8],
+        "comments":        results[9],
+        "likes":           results[10],
+        "favorites":       results[11],
+        "sports":          results[12],
+        "tele_realite":    results[13],
+        "magazine":        results[14],
+        "archives":        results[15],
+        "missed":          results[16],
     }
     
+    # Cache 30 minutes — les stats du dashboard ne changent pas à la seconde
+    await cache_manager.set(cache_key, stats, ttl=1800)
     return stats

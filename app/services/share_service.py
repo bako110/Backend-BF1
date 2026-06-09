@@ -6,8 +6,10 @@ from app.models.reel import Reel
 from app.models.archive import Archive
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
+from app.models.magazine import Magazine
 from app.models.sport import Sport
 from app.models.series import Series
+from app.models.missed import Missed
 from app.schemas.share import ShareCreate
 from typing import List, Optional
 from app.utils.engagement import increment_share
@@ -20,9 +22,11 @@ CONTENT_MODELS = {
     "reel": Reel,
     "reportage": Reportage,
     "jtandmag": JTandMag,
+    "magazine": Magazine,
     "sport": Sport,
     "series": Series,
     "archive": Archive,
+    "missed": Missed,
 }
 
 

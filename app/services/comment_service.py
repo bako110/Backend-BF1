@@ -7,9 +7,11 @@ from app.models.reel import Reel
 from app.models.archive import Archive
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
+from app.models.magazine import Magazine
 from app.models.sport import Sport
 from app.models.tele_realite import TeleRealite
 from app.models.series import Series
+from app.models.missed import Missed
 from app.utils.engagement import increment_comment
 from app.schemas.comment import CommentCreate, CommentUpdate
 from typing import List, Optional
@@ -47,10 +49,12 @@ CONTENT_MODELS = {
     "reel": Reel,
     "reportage": Reportage,
     "jtandmag": JTandMag,
-    "tele-realite": TeleRealite,
+    "magazine": Magazine,
+    "tele_realite": TeleRealite,
     "sport": Sport,
     "series": Series,       
-    "archive": Archive,  # Pas de modèle spécifique pour les commentaires d'archive, on gère via l'endpoint dédié
+    "archive": Archive,
+    "missed": Missed,
 }
     
 
@@ -71,15 +75,24 @@ async def get_comments(content_id: str, content_type: str, skip: int = 0, limit:
         Comment.content_type == content_type,
         Comment.is_hidden == False
     ).sort(-Comment.created_at).skip(skip).limit(limit).to_list()
-    
-    # Enrichir avec les infos utilisateur
+
+    if not comments:
+        return []
+
+    # Charger tous les users en une seule requête $in
+    user_ids = list({c.user_id for c in comments})
+    from bson import ObjectId
+    users_list = await User.find({"_id": {"$in": [ObjectId(uid) for uid in user_ids if uid]}}).to_list()
+    users_map = {str(u.id): u for u in users_list}
+
     enriched_comments = []
     for comment in comments:
-        user = await User.get(comment.user_id)
+        user = users_map.get(comment.user_id)
         comment_dict = comment.dict()
         comment_dict['username'] = user.username if user else "Utilisateur inconnu"
+        comment_dict['avatar_url'] = user.avatar_url if user else None
         enriched_comments.append(comment_dict)
-    
+
     return enriched_comments
 
 async def get_user_comments(user_id: str, skip: int = 0, limit: int = 50) -> List[Comment]:
@@ -154,16 +167,24 @@ async def count_comments(content_id: str, content_type: str) -> int:
         Comment.content_type == content_type
     ).count()
 
-async def get_all_comments(skip: int = 0, limit: int = 1000) -> List[dict]:
+async def get_all_comments(skip: int = 0, limit: int = 100) -> List[dict]:
     """Récupérer tous les commentaires (pour admin)"""
-    comments = await Comment.find().skip(skip).limit(limit).to_list()
-    
-    # Enrichir avec les infos utilisateur
+    comments = await Comment.find().sort(-Comment.created_at).skip(skip).limit(limit).to_list()
+
+    if not comments:
+        return []
+
+    from bson import ObjectId
+    user_ids = list({c.user_id for c in comments})
+    users_list = await User.find({"_id": {"$in": [ObjectId(uid) for uid in user_ids if uid]}}).to_list()
+    users_map = {str(u.id): u for u in users_list}
+
     enriched_comments = []
     for comment in comments:
-        user = await User.get(comment.user_id)
+        user = users_map.get(comment.user_id)
         comment_dict = comment.dict()
         comment_dict['username'] = user.username if user else "Utilisateur inconnu"
+        comment_dict['avatar_url'] = user.avatar_url if user else None
         enriched_comments.append(comment_dict)
-    
+
     return enriched_comments

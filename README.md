@@ -1,4 +1,4 @@
-# Backend BF1 - Documentation Complète
+��# Backend BF1 - Documentation Complète
 
 API backend de la plateforme de streaming **BF1 TV** — construite avec FastAPI, MongoDB et Firebase.
 
@@ -154,9 +154,9 @@ Le serveur démarre sur : **http://localhost:8080**
 | Couche | Technologie |
 |--------|------------|
 | Framework | FastAPI 0.110.0 |
-| Serveur | Uvicorn (dev) / Gunicorn (prod) |
-| Base de données | MongoDB Atlas (async Motor + Beanie) |
-| ORM | Beanie (modèles Pydantic v2) |
+| Serveur | Uvicorn (dev/ Gunicorn (prod|
+| Base de données | MongoDB Atlas (async Motor + Beanie|
+| ORM | Beanie (modèles Pydantic v2|
 | Authentification | JWT HS256 + bcrypt |
 | Temps réel | WebSocket + Firebase FCM |
 | Cache | Redis (optionnel) |
@@ -452,9 +452,9 @@ Backend-BF1/
 | `subscriptions` | Abonnements utilisateurs |
 | `subscription_plans` | Plans d'abonnement disponibles |
 | `payment_method` | Méthodes de paiement |
-| `likes` | Likes (compteurs dénormalisés) |
+| `likes` | Likes (compteurs dénormalisés|
 | `favorites` | Favoris utilisateurs |
-| `comments` | Commentaires (avec modération) |
+| `comments` | Commentaires (avec modération|
 | `messages` | Messages directs |
 | `notifications` | Notifications in-app |
 | `shares` | Suivi des partages |

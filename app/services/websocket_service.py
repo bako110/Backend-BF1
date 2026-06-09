@@ -1,17 +1,28 @@
 from fastapi import WebSocket, WebSocketDisconnect
-from typing import List
+from typing import List, Dict, Optional
 import json
 import asyncio
+import uuid
+from datetime import datetime
 
 class WebSocketManager:
     def __init__(self):
         # Liste des connexions WebSocket actives
         self.active_connections: List[WebSocket] = []
         # Dictionnaire pour stocker les informations sur les connexions
-        self.connection_info = {}
+        self.connection_info: Dict[WebSocket, dict] = {}
         # Tracking des utilisateurs regardant le livestream
-        self.livestream_viewers: set = set()  # Set des IDs des utilisateurs regardant le live
-        self.livestream_connections: List[WebSocket] = []  # Connexions actives pour le livestream
+        self.livestream_viewers: set = set()
+        self.livestream_connections: List[WebSocket] = []
+
+        # ── Chat live ────────────────────────────────────────────────────────
+        # Historique des messages en mémoire (max 200)
+        self.chat_messages: List[dict] = []
+        self.MAX_CHAT_MESSAGES = 200
+        # IDs des messages masqués/supprimés par l'admin
+        self.hidden_message_ids: set = set()
+        # Statut du chat (ouvert / fermé par l'admin)
+        self.chat_open: bool = True
     
     async def connect(self, websocket: WebSocket, client_id: str = None):
         """Accepter une nouvelle connexion WebSocket"""
@@ -163,6 +174,105 @@ class WebSocketManager:
                     self.livestream_viewers.remove(user_id)
         
         print(f"🎥 Message diffusé à {len(self.livestream_connections) - len(disconnected)} spectateurs livestream")
+
+    # ── Méthodes Chat Live ────────────────────────────────────────────────────
+
+    def _visible_messages(self) -> List[dict]:
+        """Retourne les messages non masqués (pour broadcast)"""
+        return [m for m in self.chat_messages if m['id'] not in self.hidden_message_ids]
+
+    async def add_chat_message(self, user_id: Optional[str], username: str,
+                               avatar_url: Optional[str], text: str) -> Optional[dict]:
+        """Ajouter un message chat et broadcaster à tous les spectateurs du live.
+        Retourne None si le chat est fermé."""
+        if not self.chat_open:
+            return None
+
+        msg = {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "username": username,
+            "avatar_url": avatar_url,
+            "text": text,
+            "created_at": datetime.utcnow().isoformat(),
+        }
+
+        self.chat_messages.append(msg)
+        # Garder seulement les MAX_CHAT_MESSAGES derniers
+        if len(self.chat_messages) > self.MAX_CHAT_MESSAGES:
+            self.chat_messages = self.chat_messages[-self.MAX_CHAT_MESSAGES:]
+
+        await self.broadcast_to_livestream({
+            "type": "chat_message",
+            "message": msg
+        })
+        return msg
+
+    async def hide_chat_message(self, message_id: str) -> bool:
+        """Masquer un message (admin). Broadcaster l'événement."""
+        self.hidden_message_ids.add(message_id)
+        await self.broadcast_to_livestream({
+            "type": "chat_message_hidden",
+            "message_id": message_id
+        })
+        return True
+
+    async def delete_chat_message(self, message_id: str) -> bool:
+        """Supprimer définitivement un message (admin). Broadcaster l'événement."""
+        self.chat_messages = [m for m in self.chat_messages if m['id'] != message_id]
+        self.hidden_message_ids.discard(message_id)
+        await self.broadcast_to_livestream({
+            "type": "chat_message_deleted",
+            "message_id": message_id
+        })
+        return True
+
+    async def edit_chat_message(self, message_id: str, new_text: str) -> bool:
+        """Modifier le texte d'un message. Broadcaster l'événement."""
+        for msg in self.chat_messages:
+            if msg['id'] == message_id:
+                msg['text'] = new_text
+                msg['edited'] = True
+                await self.broadcast_to_livestream({
+                    "type": "chat_message_edited",
+                    "message_id": message_id,
+                    "text": new_text,
+                })
+                return True
+        return False
+
+    async def set_chat_open(self, open: bool) -> None:
+        """Ouvrir ou fermer le chat (admin). Broadcaster l'état."""
+        self.chat_open = open
+        await self.broadcast_to_livestream({
+            "type": "chat_status",
+            "open": open,
+            "message": "Le chat est maintenant ouvert." if open else "Le chat a été fermé par l'administrateur."
+        })
+
+    async def clear_chat(self) -> None:
+        """Vider tout le chat (admin)."""
+        self.chat_messages.clear()
+        self.hidden_message_ids.clear()
+        await self.broadcast_to_livestream({
+            "type": "chat_cleared",
+            "message": "Le chat a été vidé par l'administrateur."
+        })
+
+    def get_chat_history(self, limit: int = 50) -> List[dict]:
+        """Retourne les derniers messages visibles."""
+        visible = self._visible_messages()
+        return visible[-limit:]
+
+    def get_chat_state(self) -> dict:
+        """Retourne l'état complet du chat (pour un nouveau connecté)."""
+        return {
+            "type": "chat_init",
+            "open": self.chat_open,
+            "messages": self.get_chat_history(50),
+            "viewers": self.get_livestream_viewer_count(),
+        }
+
 
 # Instance globale du gestionnaire WebSocket
 websocket_manager = WebSocketManager()

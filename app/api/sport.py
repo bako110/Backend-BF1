@@ -5,6 +5,7 @@ Définit tous les endpoints pour les opérations sur les sports
 
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from pydantic import BaseModel
 
 from app.services.sport_service import SportService
 from app.schemas.sport import (
@@ -58,7 +59,7 @@ async def get_all_sports(
                 filtered_sports.append(sport)
 
         if category:
-            filtered_sports = [e for e in filtered_sports if e.category == category]
+            filtered_sports = [e for e in filtered_sports if (getattr(e, 'sport_type', '') or '').lower() == category.lower()]
         if featured is not None:
             filtered_sports = [e for e in filtered_sports if getattr(e, 'featured', False) == featured]
         if is_new is not None:
@@ -250,3 +251,22 @@ async def delete_sport(
     """
     success = await service.delete_sport(sport_id)
     return {"success": success, "message": "Sport supprimé avec succès"}
+
+
+class BatchDeleteIds(BaseModel):
+    ids: List[str]
+
+@router.post("/delete-batch", summary="Supprimer plusieurs sports")
+async def delete_batch_sports(
+    body: BatchDeleteIds,
+    service: SportService = Depends(get_sport_service),
+    current_user = Depends(get_admin_user)
+):
+    """Supprimer plusieurs sports en lot (admin seulement)"""
+    if not body.ids:
+        raise HTTPException(status_code=400, detail="Aucun ID fourni")
+    count = 0
+    for item_id in body.ids:
+        if await service.delete_sport(item_id):
+            count += 1
+    return {"ok": True, "deleted": count}

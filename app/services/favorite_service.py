@@ -5,11 +5,13 @@ from app.models.divertissement import Divertissement
 from app.models.reel import Reel
 from app.models.reportage import Reportage
 from app.models.jtandmag import JTandMag
+from app.models.magazine import Magazine
 from app.models.sport import Sport
 from app.models.emission_category import EmissionCategory
 from app.models.series import Series
 from app.models.archive import Archive
 from app.models.tele_realite import TeleRealite
+from app.models.missed import Missed
 from app.schemas.favorite import FavoriteCreate
 from typing import List, Optional, Dict
 
@@ -21,11 +23,13 @@ CONTENT_MODELS = {
 	"reel": Reel,
 	"reportage": Reportage,
 	"jtandmag": JTandMag,
+	"magazine": Magazine,
 	"sport": Sport,
 	"emission_category": EmissionCategory,
 	"series": Series,
 	"archive": Archive,
 	"tele_realite": TeleRealite,
+	"missed": Missed,
 }
 
 

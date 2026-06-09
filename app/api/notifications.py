@@ -1,16 +1,51 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
+from pydantic import BaseModel
+from typing import Optional
 from app.utils.auth import get_current_user, get_admin_user
 from app.schemas.notification import NotificationCreate, NotificationOut, AdminNotificationGlobal, AdminNotificationIndividual
 from app.services.notification_service import (
 	create_notification, get_notification, list_notifications, mark_as_read,
 	delete_notification, mark_all_as_read, delete_all_notifications,
-	send_global_notification, send_individual_notification
+	send_global_notification, send_individual_notification,
+	admin_list_notifications, admin_update_notification, admin_delete_notifications
 )
 from typing import List
 
 router = APIRouter()
 
 # ─── Endpoints Admin ──────────────────────────────────────────────────────────
+
+@router.get("/admin/all", tags=["Admin - Notifications"])
+async def admin_list_all(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), current_user=Depends(get_admin_user)):
+	"""[ADMIN] Lister toutes les notifications admin creees"""
+	return await admin_list_notifications(page, limit)
+
+
+class AdminNotificationUpdate(BaseModel):
+	id: str
+	title: str
+	message: str
+	category: Optional[str] = "admin"
+
+@router.put("/admin/update", tags=["Admin - Notifications"])
+async def admin_update(body: AdminNotificationUpdate, current_user=Depends(get_admin_user)):
+	"""[ADMIN] Modifier une notification admin par ID"""
+	result = await admin_update_notification(body.id, body.title, body.message, body.category or "admin")
+	if not result:
+		raise HTTPException(status_code=404, detail="Notification introuvable")
+	return {"ok": True}
+
+
+class AdminNotificationDelete(BaseModel):
+	ids: List[str]
+
+@router.post("/admin/delete-batch", tags=["Admin - Notifications"])
+async def admin_delete_batch(body: AdminNotificationDelete, current_user=Depends(get_admin_user)):
+	"""[ADMIN] Supprimer des notifications admin par IDs"""
+	if not body.ids:
+		raise HTTPException(status_code=400, detail="Aucun ID fourni")
+	count = await admin_delete_notifications(body.ids)
+	return {"ok": True, "deleted": count}
 
 @router.post("/admin/global", tags=["Admin - Notifications"])
 async def admin_send_global(body: AdminNotificationGlobal, current_user=Depends(get_admin_user)):

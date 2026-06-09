@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
+from pydantic import BaseModel
 from app.utils.auth import get_admin_user, get_optional_user
 from app.schemas.breakingNews import BreakingNewsCreate, BreakingNewsOut, BreakingNewsUpdate
 from app.services.breakinkNews_service import create_news, get_news, list_news, update_news, delete_news
@@ -72,3 +73,18 @@ async def delete_one_news(news_id: str, current_user=Depends(get_admin_user)):
 	if not deleted:
 		raise HTTPException(status_code=404, detail="News not found")
 	return {"ok": True}
+
+
+class BatchDeleteIds(BaseModel):
+	ids: List[str]
+
+@router.post("/delete-batch")
+async def delete_batch_news(body: BatchDeleteIds, current_user=Depends(get_admin_user)):
+	"""Supprimer plusieurs news en lot (admin seulement)"""
+	if not body.ids:
+		raise HTTPException(status_code=400, detail="Aucun ID fourni")
+	count = 0
+	for item_id in body.ids:
+		if await delete_news(item_id):
+			count += 1
+	return {"ok": True, "deleted": count}

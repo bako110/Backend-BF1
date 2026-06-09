@@ -4,7 +4,6 @@ from datetime import datetime
 
 from app.models.archive import Archive
 from app.models.archive_purchase import ArchivePurchase
-from typing import Optional
 from app.models.user import User
 from app.schemas.archive import ArchiveCreate, ArchiveUpdate, ArchiveOut
 from app.schemas.archive_purchase import ArchivePurchaseCreate, ArchivePurchaseOut
@@ -57,14 +56,14 @@ async def get_archives(
                 "video_url": str(archive.video_url) if archive.video_url else None,
                 "duration_minutes": archive.duration_minutes or 0,
                 "price": archive.price or 0.0,
-                "required_subscription_category": archive.required_subscription_category if hasattr(archive, 'required_subscription_category') else None,
+                "required_subscription_category": archive.required_subscription_category,
                 "guest_name": archive.guest_name or "Invité",
                 "guest_role": archive.guest_role or "Invité",
                 "archived_date": archive.archived_date,
-                "is_premium": archive.is_premium if hasattr(archive, 'is_premium') else True,
-                "is_active": archive.is_active if hasattr(archive, 'is_active') else True,
+                "is_premium": archive.is_premium,
+                "is_active": archive.is_active,
                 "views": archive.views or 0,
-                "likes": archive.likes if hasattr(archive, 'likes') else 0,
+                "likes": archive.likes or 0,
                 "rating": archive.rating or 0.0,
                 "rating_count": archive.rating_count or 0,
                 "purchases_count": archive.purchases_count or 0,
@@ -90,26 +89,31 @@ async def get_archive(
     if not archive:
         raise HTTPException(status_code=404, detail="Archive non trouvée")
     
-    # Vérifier si l'utilisateur a accès (premium ou achat individuel)
-    if archive.is_premium:
+    # Vérifier si l'utilisateur a accès selon required_subscription_category
+    required_cat = archive.required_subscription_category
+    if required_cat:
         if not current_user:
             raise HTTPException(
-                status_code=401, 
-                detail="Authentification requise pour accéder au contenu premium"
+                status_code=401,
+                detail="Authentification requise pour accéder à ce contenu"
             )
-        
-        if not current_user.is_premium:
+
+        from app.utils.subscription_utils import can_access_content
+        user_cat = current_user.subscription_category
+        if not can_access_content(user_cat, required_cat):
             # Vérifier si l'utilisateur a acheté cette archive individuellement
             purchase = await ArchivePurchase.find_one({
                 "user_id": str(current_user.id),
                 "archive_id": archive_id,
                 "status": "completed"
             })
-            
             if not purchase:
                 raise HTTPException(
-                    status_code=403, 
-                    detail="Abonnement premium ou achat individuel requis pour accéder à cette archive"
+                    status_code=403,
+                    detail={
+                        "message": f"Abonnement {required_cat} requis pour accéder à cette archive",
+                        "required_category": required_cat
+                    }
                 )
     
     # Incrémentation atomique des vues (évite les pertes sous forte charge)
@@ -125,7 +129,10 @@ async def create_archive(
     archive: ArchiveCreate
 ):
     """Créer une nouvelle archive (admin uniquement)"""
-    new_archive = Archive(**archive.model_dump())
+    data = archive.model_dump()
+    # Synchroniser is_premium selon required_subscription_category
+    data["is_premium"] = data.get("required_subscription_category") is not None
+    new_archive = Archive(**data)
     await new_archive.insert()
     
     # Convertir l'ObjectId en string manuellement
@@ -163,9 +170,19 @@ async def update_archive(
     archive = await Archive.get(archive_id)
     if not archive:
         raise HTTPException(status_code=404, detail="Archive non trouvée")
-    
-    update_data = archive_update.model_dump(exclude_unset=True)
+
+    # Utiliser model_fields_set pour capturer les champs EXPLICITEMENT envoyés,
+    # y compris ceux à None (ex: required_subscription_category: null = gratuit)
+    sent_fields = archive_update.model_fields_set
+    update_data = {k: getattr(archive_update, k) for k in sent_fields}
+
     if update_data:
+        # Synchroniser is_premium selon required_subscription_category
+        if "required_subscription_category" in update_data:
+            req_cat = update_data["required_subscription_category"]
+            # null = gratuit -> is_premium = False, valeur présente -> is_premium = True
+            update_data["is_premium"] = req_cat is not None
+
         update_data["updated_at"] = datetime.utcnow()
         for key, value in update_data.items():
             setattr(archive, key, value)
@@ -186,6 +203,7 @@ async def update_archive(
         "archived_date": archive.archived_date,
         "is_premium": archive.is_premium,
         "is_active": archive.is_active,
+        "required_subscription_category": archive.required_subscription_category,
         "views": archive.views,
         "rating": archive.rating,
         "rating_count": archive.rating_count,
