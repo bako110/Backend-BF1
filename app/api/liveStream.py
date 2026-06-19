@@ -356,9 +356,10 @@ async def clear_url_cache(current_user=Depends(get_current_user)):
 async def get_live_comments(skip: int = 0, limit: int = 50):
     """Récupérer les commentaires persistants du live (publics)"""
     from app.services.comment_service import get_comments
+    from app.services.websocket_service import websocket_manager
     comments = await get_comments(LIVE_CONTENT_ID, LIVE_CONTENT_TYPE, skip, limit)
     count = len(comments)
-    return {"comments": comments, "total": count}
+    return {"comments": comments, "total": count, "chat_open": websocket_manager.chat_open}
 
 
 @router.post("/comments")

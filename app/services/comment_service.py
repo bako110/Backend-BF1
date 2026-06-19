@@ -23,10 +23,10 @@ async def add_comment(user_id: str, data: CommentCreate) -> Optional[Comment]:
     if data.content_type != "livestream":
         # Vérifier que le contenu existe
         content = await _get_content(data.content_type, data.content_id)
-        
+
         if not content:
             return None
-    
+
     comment = Comment(
         user_id=user_id,
         content_id=data.content_id,
@@ -34,7 +34,7 @@ async def add_comment(user_id: str, data: CommentCreate) -> Optional[Comment]:
         text=data.text
     )
     await comment.insert()
-    
+
     # Pour livestream, on n'incrémente pas le compteur sur un modèle
     if data.content_type != "livestream":
         await increment_comment(data.content_type, data.content_id, 1)

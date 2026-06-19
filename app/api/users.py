@@ -282,6 +282,75 @@ async def google_auth_callback(code: str = None, error: str = None):
         return RedirectResponse(url="bf1tv://oauth/callback?error=server_error")
 
 
+class GoogleMobileTokenRequest(BaseModel):
+    id_token: str
+
+@router.post("/auth/google/mobile")
+async def google_mobile_auth(body: GoogleMobileTokenRequest):
+    """Vérifier un idToken Google (SDK mobile) et retourner un JWT BF1."""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                f"https://oauth2.googleapis.com/tokeninfo?id_token={body.id_token}"
+            )
+            info = resp.json()
+
+        if "error" in info or "error_description" in info:
+            raise HTTPException(status_code=401, detail="Token Google invalide")
+
+        email = info.get("email", "").lower().strip()
+        if not email:
+            raise HTTPException(status_code=400, detail="Email non reçu de Google")
+
+        google_sub = info.get("sub", "")
+        given_name = info.get("given_name", "")
+        family_name = info.get("family_name", "")
+        full_name = (f"{given_name}_{family_name}".strip("_") or email.split("@")[0]).replace(" ", "_")
+        google_picture = info.get("picture", "")
+
+        user = await User.find_one({"email": email})
+        if not user:
+            base_username = full_name[:20] or email.split("@")[0]
+            username = base_username
+            if await User.find_one({"username": username}):
+                username = f"{base_username}_{google_sub[-6:]}"
+            fake_password = secrets.token_hex(32)
+            user = User(
+                email=email,
+                username=username,
+                hashed_password=_pwd_context.hash(fake_password),
+                avatar_url=google_picture or None,
+            )
+            await user.insert()
+            print(f"[GoogleMobile] Nouvel utilisateur: {username} ({email})")
+        else:
+            if not user.avatar_url and google_picture:
+                user.avatar_url = google_picture
+                await user.save()
+            print(f"[GoogleMobile] Utilisateur existant: {user.username} ({email})")
+
+        payload = {"sub": str(user.id)}
+        bf1_token = jose_jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+        return {
+            "access_token": bf1_token,
+            "user": {
+                "id": str(user.id),
+                "email": user.email,
+                "username": user.username,
+                "is_premium": user.is_premium,
+                "is_active": user.is_active,
+                "avatar_url": user.avatar_url,
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[GoogleMobile] Erreur: {exc}")
+        raise HTTPException(status_code=500, detail="Erreur serveur Google OAuth")
+
+
 # Facebook OAuth 2.0
 # ─────────────────────────────────────────────────────────────
 

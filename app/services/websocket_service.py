@@ -242,9 +242,11 @@ class WebSocketManager:
         return False
 
     async def set_chat_open(self, open: bool) -> None:
-        """Ouvrir ou fermer le chat (admin). Broadcaster l'état."""
+        """Ouvrir ou fermer le chat (admin). Broadcaster l'état à toutes les connexions."""
         self.chat_open = open
-        await self.broadcast_to_livestream({
+        # Broadcaster à toutes les connexions actives (pas seulement les spectateurs livestream)
+        # pour s'assurer que tous reçoivent le changement d'état
+        await self.broadcast({
             "type": "chat_status",
             "open": open,
             "message": "Le chat est maintenant ouvert." if open else "Le chat a été fermé par l'administrateur."
@@ -254,7 +256,7 @@ class WebSocketManager:
         """Vider tout le chat (admin)."""
         self.chat_messages.clear()
         self.hidden_message_ids.clear()
-        await self.broadcast_to_livestream({
+        await self.broadcast({
             "type": "chat_cleared",
             "message": "Le chat a été vidé par l'administrateur."
         })
