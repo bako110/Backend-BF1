@@ -9,9 +9,10 @@ bind = f"0.0.0.0:{os.getenv('PORT', '8000')}"
 backlog = 2048
 
 # ── Workers ───────────────────────────────────────────────────────────────────
-# Règle standard : (2 × CPU) + 1 pour workload I/O-bound (MongoDB, Redis, HTTP)
+# Limité à 4 max pour éviter OOM sur serveurs avec peu de RAM (512 MB–1 GB)
 _cpu = multiprocessing.cpu_count()
-workers = int(os.getenv("WEB_CONCURRENCY", (_cpu * 2) + 1))
+_default_workers = min((_cpu * 2) + 1, 4)
+workers = int(os.getenv("WEB_CONCURRENCY", _default_workers))
 worker_class = "uvicorn.workers.UvicornWorker"
 worker_connections = 1000
 
