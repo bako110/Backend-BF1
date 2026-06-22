@@ -20,13 +20,12 @@ async def create_admin():
     
     # Créer l'admin par défaut
     username = "admin"
-    email = "admin@example.com"
-    password = "password"
-    
+    email = "admin@bf1.com"
+    password = "admin@bf1.com"
+
     print("🔧 Création de l'administrateur par défaut...")
     print(f"   Username: {username}")
     print(f"   Email: {email}")
-    print(f"   Password: {password}")
     
     hashed_password = pwd_context.hash(password)
     
@@ -44,8 +43,6 @@ async def create_admin():
     print(f"✅ Administrateur créé avec succès!")
     print(f"\n📝 Identifiants de connexion:")
     print(f"   Username/Email: {username} ou {email}")
-    print(f"   Password: {password}")
-    print(f"\n⚠️  IMPORTANT: Changez ce mot de passe après la première connexion!")
 
 if __name__ == "__main__":
     asyncio.run(create_admin())
