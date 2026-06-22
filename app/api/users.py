@@ -20,9 +20,6 @@ GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "https://bf1.fly.dev/api/v1/users/auth/google/callback")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://bf1-tv-mobile.onrender.com")
 
-FACEBOOK_APP_ID = os.getenv("FACEBOOK_APP_ID", "")
-FACEBOOK_APP_SECRET = os.getenv("FACEBOOK_APP_SECRET", "")
-FACEBOOK_REDIRECT_URI = os.getenv("FACEBOOK_REDIRECT_URI", "https://bf1.fly.dev/api/v1/users/auth/facebook/callback")
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "changeme")
 ALGORITHM = "HS256"
 _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -350,126 +347,6 @@ async def google_mobile_auth(body: GoogleMobileTokenRequest):
         print(f"[GoogleMobile] Erreur: {exc}")
         raise HTTPException(status_code=500, detail="Erreur serveur Google OAuth")
 
-
-# Facebook OAuth 2.0
-# ─────────────────────────────────────────────────────────────
-
-@router.get("/auth/facebook")
-async def facebook_auth_redirect():
-    """Redirect browser to Facebook OAuth consent screen."""
-    if not FACEBOOK_APP_ID:
-        raise HTTPException(status_code=503, detail="Facebook OAuth non configuré (FACEBOOK_APP_ID manquant)")
-    params = {
-        "client_id": FACEBOOK_APP_ID,
-        "redirect_uri": FACEBOOK_REDIRECT_URI,
-        "scope": "public_profile,email",
-        "response_type": "code",
-    }
-    url = "https://www.facebook.com/v19.0/dialog/oauth?" + urllib.parse.urlencode(params)
-    return RedirectResponse(url=url)
-
-
-@router.get("/auth/facebook/callback")
-async def facebook_auth_callback(code: str = None, error: str = None, error_reason: str = None):
-    """Exchange Facebook auth code for user info, create/find user, issue JWT."""
-    if error or not code:
-        error_url = f"{FRONTEND_URL}/pages/connexion.html?auth_error=access_denied"
-        return RedirectResponse(url=error_url)
-
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            # Exchange code → access_token
-            token_resp = await client.get(
-                "https://graph.facebook.com/v19.0/oauth/access_token",
-                params={
-                    "client_id": FACEBOOK_APP_ID,
-                    "client_secret": FACEBOOK_APP_SECRET,
-                    "redirect_uri": FACEBOOK_REDIRECT_URI,
-                    "code": code,
-                },
-            )
-            token_data = token_resp.json()
-            access_token_fb = token_data.get("access_token")
-            if not access_token_fb:
-                raise ValueError(f"Pas d'access_token Facebook: {token_data}")
-
-            # Get user info from Facebook
-            userinfo_resp = await client.get(
-                "https://graph.facebook.com/me",
-                params={"fields": "id,name,email,picture.width(200)", "access_token": access_token_fb},
-            )
-            userinfo = userinfo_resp.json()
-
-        fb_id = userinfo.get("id", "")
-        full_name = userinfo.get("name", "").replace(" ", "_")
-        email = userinfo.get("email", "").lower().strip()
-        fb_picture = ""
-        try:
-            pic_data = userinfo.get("picture", {}).get("data", {})
-            if not pic_data.get("is_silhouette", True):
-                fb_picture = pic_data.get("url", "")
-        except Exception:
-            pass
-
-        # Facebook may not provide email (phone-only accounts)
-        if not email:
-            email = f"fb_{fb_id}@noemail.bf1tv"
-
-        # Find or create user
-        user = await User.find_one({"email": email})
-        if not user:
-            base_username = full_name[:20] or f"fb_{fb_id}"
-            username = base_username
-            if await User.find_one({"username": username}):
-                username = f"{base_username}_{fb_id[-6:]}"
-
-            fake_password = secrets.token_hex(32)
-            user = User(
-                email=email,
-                username=username,
-                hashed_password=_pwd_context.hash(fake_password),
-                avatar_url=fb_picture or None,
-            )
-            await user.insert()
-            print(f"[FacebookOAuth] Nouvel utilisateur créé: {username} ({email})")
-        else:
-            # Mettre à jour l'avatar si l'utilisateur n'en a pas encore
-            if not user.avatar_url and fb_picture:
-                user.avatar_url = fb_picture
-                await user.save()
-            print(f"[FacebookOAuth] Utilisateur existant: {user.username} ({email})")
-
-        # Emit welcome notification for new users
-        try:
-            from app.services.notification_service import send_welcome_notification
-            await send_welcome_notification(str(user.id), user.username)
-        except Exception:
-            pass
-
-        # Issue our JWT
-        payload = {"sub": str(user.id)}
-        bf1_token = jose_jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-
-        user_data = json.dumps({
-            "id": str(user.id),
-            "email": user.email,
-            "username": user.username,
-            "is_premium": user.is_premium,
-            "is_active": user.is_active,
-            "avatar_url": user.avatar_url,
-        })
-
-        redirect_url = (
-            f"{FRONTEND_URL}/pages/auth-callback.html"
-            f"?token={urllib.parse.quote(bf1_token)}"
-            f"&user={urllib.parse.quote(user_data)}"
-        )
-        return RedirectResponse(url=redirect_url)
-
-    except Exception as exc:
-        print(f"[FacebookOAuth] Erreur callback: {exc}")
-        error_url = f"{FRONTEND_URL}/pages/connexion.html?auth_error=server_error"
-        return RedirectResponse(url=error_url)
 
 
 @router.get("")

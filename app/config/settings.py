@@ -50,10 +50,6 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
     GOOGLE_REDIRECT_URI: str = os.getenv("GOOGLE_REDIRECT_URI", "")
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "")
-    FACEBOOK_APP_ID: str = os.getenv("FACEBOOK_APP_ID", "")
-    FACEBOOK_APP_SECRET: str = os.getenv("FACEBOOK_APP_SECRET", "")
-    FACEBOOK_REDIRECT_URI: str = os.getenv("FACEBOOK_REDIRECT_URI", "")
-
     # Firebase
     FIREBASE_SERVICE_ACCOUNT_PATH: str = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH", "firebase-service-account.json")
     
