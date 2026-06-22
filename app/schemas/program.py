@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, Field, validator
 from datetime import datetime
 from typing import Optional, List
 from bson import ObjectId
@@ -29,7 +29,7 @@ class LiveChannelUpdate(BaseModel):
 
 class LiveChannelOut(LiveChannelBase):
     id: str = Field(..., alias="id")
-    logo_url: Optional[HttpUrl] = None
+    logo_url: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -84,8 +84,8 @@ class ProgramOut(ProgramBase):
     id: str = Field(..., alias="id")
     start_time: datetime
     end_time: datetime
-    image_url: Optional[HttpUrl] = None
-    thumbnail_url: Optional[HttpUrl] = None
+    image_url: Optional[str] = None
+    thumbnail_url: Optional[str] = None
     is_live: bool
     replay_url: Optional[str] = None
     channel_id: Optional[str] = None

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl, field_validator
+from pydantic import BaseModel, field_validator
 from typing import Optional, List, Any
 from datetime import datetime
 
@@ -8,13 +8,13 @@ class AppInfoBase(BaseModel):
     release_date: datetime
     app_name: str = "BF1 TV"
     description: str
-    website: Optional[HttpUrl] = None
-    privacy_policy_url: Optional[HttpUrl] = None
-    terms_url: Optional[HttpUrl] = None
-    facebook_url: Optional[HttpUrl] = None
-    twitter_url: Optional[HttpUrl] = None
-    instagram_url: Optional[HttpUrl] = None
-    youtube_url: Optional[HttpUrl] = None
+    website: Optional[str] = None
+    privacy_policy_url: Optional[str] = None
+    terms_url: Optional[str] = None
+    facebook_url: Optional[str] = None
+    twitter_url: Optional[str] = None
+    instagram_url: Optional[str] = None
+    youtube_url: Optional[str] = None
     support_email: Optional[str] = None
     contact_phone: Optional[str] = None
     features: List[str] = []
@@ -30,13 +30,13 @@ class AppInfoUpdate(BaseModel):
     build_number: Optional[str] = None
     release_date: Optional[datetime] = None
     description: Optional[str] = None
-    website: Optional[HttpUrl] = None
-    privacy_policy_url: Optional[HttpUrl] = None
-    terms_url: Optional[HttpUrl] = None
-    facebook_url: Optional[HttpUrl] = None
-    twitter_url: Optional[HttpUrl] = None
-    instagram_url: Optional[HttpUrl] = None
-    youtube_url: Optional[HttpUrl] = None
+    website: Optional[str] = None
+    privacy_policy_url: Optional[str] = None
+    terms_url: Optional[str] = None
+    facebook_url: Optional[str] = None
+    twitter_url: Optional[str] = None
+    instagram_url: Optional[str] = None
+    youtube_url: Optional[str] = None
     support_email: Optional[str] = None
     contact_phone: Optional[str] = None
     features: Optional[List[str]] = None
@@ -65,10 +65,10 @@ class TeamMemberBase(BaseModel):
     name: str
     role: str
     bio: Optional[str] = None
-    photo_url: Optional[HttpUrl] = None
+    photo_url: Optional[str] = None
     email: Optional[str] = None
-    linkedin_url: Optional[HttpUrl] = None
-    twitter_url: Optional[HttpUrl] = None
+    linkedin_url: Optional[str] = None
+    twitter_url: Optional[str] = None
     order: int = 0
 
 
@@ -80,10 +80,10 @@ class TeamMemberUpdate(BaseModel):
     name: Optional[str] = None
     role: Optional[str] = None
     bio: Optional[str] = None
-    photo_url: Optional[HttpUrl] = None
+    photo_url: Optional[str] = None
     email: Optional[str] = None
-    linkedin_url: Optional[HttpUrl] = None
-    twitter_url: Optional[HttpUrl] = None
+    linkedin_url: Optional[str] = None
+    twitter_url: Optional[str] = None
     order: Optional[int] = None
     is_active: Optional[bool] = None
 

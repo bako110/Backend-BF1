@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, Field, validator
 from datetime import datetime
 from typing import Optional, List
 from bson import ObjectId
@@ -8,9 +8,9 @@ class TeleRealiteBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="Titre")
     category: str = Field(..., min_length=1, max_length=80, description="Catégorie")
     sub_type: str = Field(default="tele_realite", description="tele_realite | event")
-    video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
-    thumbnail: Optional[HttpUrl] = Field(None, description="Miniature")
-    image: Optional[HttpUrl] = Field(None, description="Image principale")
+    video_url: Optional[str] = Field(None, description="URL de la vidéo")
+    thumbnail: Optional[str] = Field(None, description="Miniature")
+    image: Optional[str] = Field(None, description="Image principale")
     description: Optional[str] = Field(None, max_length=5000, description="Description")
     duration_minutes: Optional[int] = Field(None, ge=1, le=1440, description="Durée en minutes")
     host: Optional[str] = Field(None, min_length=1, max_length=120, description="Animateur")
@@ -37,9 +37,9 @@ class TeleRealiteUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     category: Optional[str] = Field(None, min_length=1, max_length=80)
     sub_type: Optional[str] = None
-    video_url: Optional[HttpUrl] = None
-    thumbnail: Optional[HttpUrl] = None
-    image: Optional[HttpUrl] = None
+    video_url: Optional[str] = None
+    thumbnail: Optional[str] = None
+    image: Optional[str] = None
     description: Optional[str] = Field(None, max_length=5000)
     duration_minutes: Optional[int] = Field(None, ge=1, le=1440)
     host: Optional[str] = Field(None, max_length=120)

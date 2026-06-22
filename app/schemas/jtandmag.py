@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, Field, validator
 from datetime import datetime
 from typing import Optional
 from bson import ObjectId
@@ -7,7 +7,7 @@ from bson import ObjectId
 class JTandMagBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="Titre de l'émission")
     category: str = Field(..., min_length=1, max_length=80, description="Catégorie")
-    image: Optional[HttpUrl] = Field(None, description="Image de l'émission")
+    image: Optional[str] = Field(None, description="Image de l'émission")
     video_url: Optional[str] = Field(None, description="URL de la vidéo (YouTube ou directe)")
     description: Optional[str] = Field(None, max_length=5000, description="Description")
     host: Optional[str] = Field(None, min_length=1, max_length=120, description="Animateur / présentateur")
@@ -30,7 +30,7 @@ class JTandMagCreate(JTandMagBase):
 class JTandMagUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     category: Optional[str] = Field(None, min_length=1, max_length=80)
-    image: Optional[HttpUrl] = None
+    image: Optional[str] = None
     video_url: Optional[str] = None
     description: Optional[str] = Field(None, min_length=1, max_length=5000)
     host: Optional[str] = Field(None, min_length=1, max_length=120)

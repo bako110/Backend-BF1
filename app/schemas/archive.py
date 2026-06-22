@@ -1,13 +1,13 @@
-from pydantic import BaseModel, HttpUrl, field_validator
+from pydantic import BaseModel, field_validator
 from typing import Optional, Any
 from datetime import datetime
 
 
 class ArchiveBase(BaseModel):
     title: str
-    image: Optional[HttpUrl] = None
-    thumbnail: Optional[HttpUrl] = None
-    video_url: Optional[HttpUrl] = None
+    image: Optional[str] = None
+    thumbnail: Optional[str] = None
+    video_url: Optional[str] = None
     description: Optional[str] = None
     duration_minutes: int
     is_premium: bool = True
@@ -23,12 +23,12 @@ class ArchiveCreate(BaseModel):
     title: str
     description: Optional[str] = None
     category: Optional[str] = None
-    thumbnail: Optional[HttpUrl] = None
-    video_url: Optional[HttpUrl] = None
+    thumbnail: Optional[str] = None
+    video_url: Optional[str] = None
     price: float = 0.0
     required_subscription_category: Optional[str] = None
     archived_date: datetime
-    
+
     @field_validator('thumbnail', 'video_url', mode='before')
     @classmethod
     def empty_str_to_none(cls, v):
@@ -39,9 +39,9 @@ class ArchiveCreate(BaseModel):
 
 class ArchiveUpdate(BaseModel):
     title: Optional[str] = None
-    image: Optional[HttpUrl] = None
-    thumbnail: Optional[HttpUrl] = None
-    video_url: Optional[HttpUrl] = None
+    image: Optional[str] = None
+    thumbnail: Optional[str] = None
+    video_url: Optional[str] = None
     description: Optional[str] = None
     duration_minutes: Optional[int] = None
     is_premium: Optional[bool] = None

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, Field, validator
 from datetime import datetime
 from typing import Optional
 from bson import ObjectId
@@ -7,8 +7,8 @@ from bson import ObjectId
 class DivertissementBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="Titre du divertissement")
     category: str = Field(..., min_length=1, max_length=80, description="Catégorie")
-    image: Optional[HttpUrl] = Field(None, description="Image du divertissement")
-    video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
+    image: Optional[str] = Field(None, description="Image du divertissement")
+    video_url: Optional[str] = Field(None, description="URL de la vidéo")
     description: Optional[str] = Field(None, max_length=5000, description="Description ou contenu du divertissement")
     host: Optional[str] = Field(None, min_length=1, max_length=120, description="Animateur / présentateur")
     allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
@@ -32,8 +32,8 @@ class DivertissementCreate(DivertissementBase):
 class DivertissementUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     category: Optional[str] = Field(None, min_length=1, max_length=80)
-    image: Optional[HttpUrl] = None
-    video_url: Optional[HttpUrl] = None
+    image: Optional[str] = None
+    video_url: Optional[str] = None
     description: Optional[str] = Field(None, min_length=1, max_length=5000)
     host: Optional[str] = Field(None, min_length=1, max_length=120)
     allow_comments: Optional[bool] = None

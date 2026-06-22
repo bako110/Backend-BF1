@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, Field, validator
 from datetime import datetime
 from typing import Optional
 from bson import ObjectId
@@ -7,8 +7,8 @@ from bson import ObjectId
 class ReportageBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="Titre du reportage")
     category: str = Field(..., min_length=1, max_length=80, description="Catégorie du reportage")
-    video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
-    thumbnail: Optional[HttpUrl] = Field(None, description="Miniature du reportage")
+    video_url: Optional[str] = Field(None, description="URL de la vidéo")
+    thumbnail: Optional[str] = Field(None, description="Miniature du reportage")
     description: Optional[str] = Field(None, max_length=5000, description="Description du reportage")
     duration_minutes: int = Field(..., ge=1, le=600, description="Durée en minutes")
     program_title: Optional[str] = Field(None, min_length=1, max_length=200, description="Émission d'origine")
@@ -30,8 +30,8 @@ class ReportageCreate(ReportageBase):
 class ReportageUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     category: Optional[str] = Field(None, min_length=1, max_length=80)
-    video_url: Optional[HttpUrl] = None
-    thumbnail: Optional[HttpUrl] = None
+    video_url: Optional[str] = None
+    thumbnail: Optional[str] = None
     description: Optional[str] = Field(None, min_length=1, max_length=5000)
     duration_minutes: Optional[int] = Field(None, ge=1, le=600)
     program_title: Optional[str] = Field(None, min_length=1, max_length=200)
