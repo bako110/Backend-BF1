@@ -16,7 +16,14 @@ BASE_DIR   = Path(__file__).resolve().parents[1]
 UPLOAD_DIR = BASE_DIR / "static" / "uploads" / "bf1"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-IMAGE_FIELDS = ["image", "thumbnail", "poster", "avatar_url", "cover", "banner", "photo"]
+IMAGE_FIELDS = [
+    # Champs génériques
+    "image", "thumbnail", "poster", "avatar_url", "cover", "banner", "photo",
+    # Champs avec suffixe _url
+    "image_url", "thumbnail_url", "poster_url", "banner_url", "photo_url",
+    # Champs spécifiques aux modèles
+    "image_main", "image_background", "image_icon",
+]
 
 client = MongoClient(MONGO_URL)
 db     = client[DB_NAME]
