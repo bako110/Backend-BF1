@@ -121,11 +121,10 @@ class SportService:
             traceback.print_exc()
             # Retourner un résultat vide en cas d'erreur
             return {
-                "sports": [],
+                "items": [],
                 "total": 0,
-                "page": page,
-                "per_page": per_page,
-                "total_pages": 0
+                "skip": skip,
+                "limit": limit,
             }
 
     async def get_sport_by_id(self, sport_id: str) -> Dict[str, Any]:

@@ -51,12 +51,8 @@ class SportBase(BaseModel):
 
     @validator('image', 'thumbnail', 'video_url')
     def validate_urls(cls, v):
-        """Valide que les URLs sont correctes"""
         if v is None:
             return v
-        # Validation simple d'URL
-        if not (v.startswith('http://') or v.startswith('https://')):
-            raise ValueError('URL invalide')
         return v
 
 
