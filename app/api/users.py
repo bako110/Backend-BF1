@@ -5,7 +5,7 @@ from app.utils.auth import get_current_user, get_admin_user
 from app.schemas.user import UserCreate, UserOut, UserLoginSchema, UserLocationUpdate, FcmTokenUpdate, UserProfileUpdate
 from app.services.user_service import create_user, get_user, list_users, login_user_service, set_user_active, delete_user
 from app.models.user import User
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 from passlib.context import CryptContext
 import secrets
@@ -425,6 +425,41 @@ async def update_my_profile(data: UserProfileUpdate, current_user=Depends(get_cu
     current_user.updated_at = datetime.utcnow()
     await current_user.save()
     return current_user
+
+
+class AdminUserUpdate(BaseModel):
+    username: Optional[str] = None
+    email:    Optional[EmailStr] = None
+    phone:    Optional[str] = None
+    is_admin: Optional[bool] = None
+    is_active: Optional[bool] = None
+
+@router.patch("/{user_id}", response_model=UserOut)
+async def admin_update_user(user_id: str, data: AdminUserUpdate, current_user=Depends(get_admin_user)):
+    """Modifier un utilisateur (admin seulement) — username, email, phone, is_admin, is_active"""
+    from typing import Optional as Opt
+    user = await get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    if data.username is not None:
+        existing = await User.find_one({"username": data.username})
+        if existing and str(existing.id) != user_id:
+            raise HTTPException(status_code=409, detail="Ce pseudo est déjà pris")
+        user.username = data.username.strip()
+    if data.email is not None:
+        existing = await User.find_one({"email": data.email.lower()})
+        if existing and str(existing.id) != user_id:
+            raise HTTPException(status_code=409, detail="Cet email est déjà utilisé")
+        user.email = data.email.lower().strip()
+    if data.phone is not None:
+        user.phone = data.phone.strip()
+    if data.is_admin is not None:
+        user.is_admin = data.is_admin
+    if data.is_active is not None:
+        user.is_active = data.is_active
+    user.updated_at = datetime.utcnow()
+    await user.save()
+    return user
 
 
 @router.get("/{user_id}", response_model=UserOut)
