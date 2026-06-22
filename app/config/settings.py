@@ -43,6 +43,14 @@ class Settings(BaseSettings):
     # Stockage local
     BASE_URL: str = os.getenv("BASE_URL", "http://localhost:8000")
 
+    # Port
+    PORT: int = int(os.getenv("PORT", "8080"))
+
+    # Cloudinary
+    CLOUDINARY_CLOUD_NAME: str = os.getenv("CLOUDINARY_CLOUD_NAME", "")
+    CLOUDINARY_API_KEY: str = os.getenv("CLOUDINARY_API_KEY", "")
+    CLOUDINARY_API_SECRET: str = os.getenv("CLOUDINARY_API_SECRET", "")
+
     # Variables manquantes du .env
     LIVE_HLS_URL: str = os.getenv("LIVE_HLS_URL", "")
     LIVE_DAILYMOTION_URL: str = os.getenv("LIVE_DAILYMOTION_URL", "")
