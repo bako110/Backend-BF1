@@ -1,5 +1,5 @@
 from beanie import Document
-from pydantic import HttpUrl, Field
+from pydantic import Field
 from datetime import datetime
 from typing import Optional, List
 
@@ -9,9 +9,9 @@ class TeleRealite(Document):
     category: str = Field(..., description="Catégorie : Télé-réalité, Événement, Concours, etc.")
     sub_type: str = Field(default="tele_realite", description="tele_realite | event")
 
-    video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
-    thumbnail: Optional[HttpUrl] = Field(None, description="Miniature")
-    image: Optional[HttpUrl] = Field(None, description="Image principale")
+    video_url: Optional[str] = Field(None, description="URL de la vidéo")
+    thumbnail: Optional[str] = Field(None, description="Miniature")
+    image: Optional[str] = Field(None, description="Image principale")
 
     description: Optional[str] = Field(None, description="Description de l'émission ou de l'événement")
     duration_minutes: Optional[int] = Field(None, ge=1, le=1440, description="Durée en minutes")

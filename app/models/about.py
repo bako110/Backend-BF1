@@ -1,5 +1,5 @@
 from beanie import Document
-from pydantic import Field, HttpUrl
+from pydantic import Field
 from typing import Optional, List
 from datetime import datetime
 
@@ -14,15 +14,15 @@ class AppInfo(Document):
     description: str = Field(..., description="Description de l'application")
     
     # Liens
-    website: Optional[HttpUrl] = Field(None, description="Site web")
-    privacy_policy_url: Optional[HttpUrl] = Field(None, description="Politique de confidentialité")
-    terms_url: Optional[HttpUrl] = Field(None, description="Conditions d'utilisation")
+    website: Optional[str] = Field(None, description="Site web")
+    privacy_policy_url: Optional[str] = Field(None, description="Politique de confidentialité")
+    terms_url: Optional[str] = Field(None, description="Conditions d'utilisation")
     
     # Réseaux sociaux
-    facebook_url: Optional[HttpUrl] = Field(None, description="Page Facebook")
-    twitter_url: Optional[HttpUrl] = Field(None, description="Compte Twitter")
-    instagram_url: Optional[HttpUrl] = Field(None, description="Compte Instagram")
-    youtube_url: Optional[HttpUrl] = Field(None, description="Chaîne YouTube")
+    facebook_url: Optional[str] = Field(None, description="Page Facebook")
+    twitter_url: Optional[str] = Field(None, description="Compte Twitter")
+    instagram_url: Optional[str] = Field(None, description="Compte Instagram")
+    youtube_url: Optional[str] = Field(None, description="Chaîne YouTube")
     
     # Contact
     support_email: Optional[str] = Field(None, description="Email de support")
@@ -50,12 +50,12 @@ class TeamMember(Document):
     name: str = Field(..., description="Nom du membre")
     role: str = Field(..., description="Rôle/Poste")
     bio: Optional[str] = Field(None, description="Biographie")
-    photo_url: Optional[HttpUrl] = Field(None, description="Photo de profil")
+    photo_url: Optional[str] = Field(None, description="Photo de profil")
     
     # Réseaux sociaux
     email: Optional[str] = Field(None, description="Email")
-    linkedin_url: Optional[HttpUrl] = Field(None, description="LinkedIn")
-    twitter_url: Optional[HttpUrl] = Field(None, description="Twitter")
+    linkedin_url: Optional[str] = Field(None, description="LinkedIn")
+    twitter_url: Optional[str] = Field(None, description="Twitter")
     
     # Ordre et visibilité
     order: int = Field(0, description="Ordre d'affichage")

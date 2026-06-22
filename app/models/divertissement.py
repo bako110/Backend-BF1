@@ -1,5 +1,5 @@
 from beanie import Document
-from pydantic import HttpUrl, Field
+from pydantic import Field
 from datetime import datetime
 from typing import Optional
 
@@ -7,8 +7,8 @@ from typing import Optional
 class Divertissement(Document):
     title: str = Field(..., description="Titre du divertissement")
     category: str = Field(..., description="Catégorie du divertissement")
-    image: Optional[HttpUrl] = Field(None, description="Image du divertissement")
-    video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
+    image: Optional[str] = Field(None, description="Image du divertissement")
+    video_url: Optional[str] = Field(None, description="URL de la vidéo")
     description: Optional[str] = Field(None, description="Description ou contenu du divertissement")
     allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
 

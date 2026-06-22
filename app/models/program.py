@@ -1,5 +1,5 @@
 from beanie import Document
-from pydantic import Field, HttpUrl
+from pydantic import Field
 from datetime import datetime
 from typing import Optional, List
 
@@ -7,7 +7,7 @@ from typing import Optional, List
 class LiveChannel(Document):
     """Chaîne TV pour organiser les programmes"""
     name: str = Field(..., description="Nom de la chaîne")
-    logo_url: Optional[HttpUrl] = Field(None, description="Logo de la chaîne")
+    logo_url: Optional[str] = Field(None, description="Logo de la chaîne")
     description: Optional[str] = Field(None, description="Description")
     order: int = Field(default=0, description="Ordre d'affichage")
     is_active: bool = Field(default=True, description="Chaîne active")
@@ -37,8 +37,8 @@ class Program(Document):
     category: Optional[str] = Field(None, description="Catégorie secondaire")
     
     # Médias
-    image_url: Optional[HttpUrl] = Field(None, description="Image/vignette")
-    thumbnail_url: Optional[HttpUrl] = Field(None, description="Miniature")
+    image_url: Optional[str] = Field(None, description="Image/vignette")
+    thumbnail_url: Optional[str] = Field(None, description="Miniature")
     
     # Présentation
     host: Optional[str] = Field(None, description="Présentateur/Animateur")

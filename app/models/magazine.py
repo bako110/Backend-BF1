@@ -1,5 +1,5 @@
 from beanie import Document
-from pydantic import HttpUrl, Field
+from pydantic import Field
 from datetime import datetime
 from typing import Optional
 
@@ -7,7 +7,7 @@ from typing import Optional
 class Magazine(Document):
     title: str = Field(..., description="Titre du magazine")
     category: str = Field(..., description="Catégorie")
-    image: Optional[HttpUrl] = Field(None, description="Image du magazine")
+    image: Optional[str] = Field(None, description="Image du magazine")
     video_url: Optional[str] = Field(None, description="URL de la vidéo (YouTube ou directe)")
     description: Optional[str] = Field(None, description="Description")
     host: Optional[str] = Field(None, description="Animateur / présentateur")

@@ -1,5 +1,5 @@
 from beanie import Document
-from pydantic import HttpUrl, Field
+from pydantic import Field
 from datetime import datetime
 from typing import Optional
 
@@ -9,9 +9,9 @@ class Archive(Document):
     guest_name: Optional[str] = Field(default="Invité", description="Nom de l'invité")
     guest_role: Optional[str] = Field(default="Invité", description="Rôle ou fonction de l'invité")
     
-    image: Optional[HttpUrl] = Field(None, description="Image de l'archive")
-    thumbnail: Optional[HttpUrl] = Field(None, description="Miniature de l'archive")
-    video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
+    image: Optional[str] = Field(None, description="Image de l'archive")
+    thumbnail: Optional[str] = Field(None, description="Miniature de l'archive")
+    video_url: Optional[str] = Field(None, description="URL de la vidéo")
     
     description: Optional[str] = Field(None, description="Description ou contenu de l'archive")
     duration_minutes: Optional[int] = Field(default=30, description="Durée en minutes")

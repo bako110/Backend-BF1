@@ -1,5 +1,5 @@
 from beanie import Document
-from pydantic import HttpUrl, Field
+from pydantic import Field
 from datetime import datetime
 from typing import Optional
 
@@ -8,8 +8,8 @@ class Reportage(Document):
     title: str = Field(..., description="Titre du reportage")
     category: str = Field(..., description="Catégorie du reportage")
 
-    video_url: Optional[HttpUrl] = Field(None, description="URL de la vidéo")
-    thumbnail: Optional[HttpUrl] = Field(None, description="Miniature du reportage")
+    video_url: Optional[str] = Field(None, description="URL de la vidéo")
+    thumbnail: Optional[str] = Field(None, description="Miniature du reportage")
 
     description: Optional[str] = Field(None, description="Description du reportage")
     duration_minutes: int = Field(..., description="Durée en minutes")

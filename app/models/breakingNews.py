@@ -1,5 +1,5 @@
 from beanie import Document
-from pydantic import HttpUrl, Field
+from pydantic import Field
 from datetime import datetime
 from typing import Optional
 
@@ -9,7 +9,7 @@ class BreakingNews(Document):
     title: str = Field(..., description="Titre de l'actualité")
     category: str = Field(..., description="Catégorie de l'actualité (Économie, Politique, etc.)")
     description: Optional[str] = Field(None, description="Contenu de l'actualité")
-    image: Optional[HttpUrl] = Field(None, description="URL de l'image")
+    image: Optional[str] = Field(None, description="URL de l'image")
     author: str = Field(..., description="Auteur de l'article")
     allow_comments: bool = Field(default=True, description="Autoriser les commentaires")
     views: int = Field(default=0, description="Nombre de vues")
