@@ -21,10 +21,10 @@ max_requests = 1000
 max_requests_jitter = 100
 
 # Charge l'app une seule fois dans le master et la partage (évite init×workers)
-preload_app = True
+preload_app = False
 
 # ── Timeouts ──────────────────────────────────────────────────────────────────
-timeout = 120           # 2 min max par requête (uploads inclus)
+timeout = 300           # 5 min pour laisser le temps au startup async
 graceful_timeout = 30   # Temps accordé aux workers pour finir avant kill
 keepalive = 5           # Secondes de keep-alive HTTP
 
