@@ -104,6 +104,46 @@ async def websocket_endpoint(websocket: WebSocket):
         websocket_manager.disconnect(websocket)
 
 
+@router.websocket("/ws/comments/{content_type}/{content_id}")
+async def comments_websocket(websocket: WebSocket, content_type: str, content_id: str):
+    """WebSocket temps réel pour les commentaires d'un contenu"""
+    await websocket.accept()
+    await websocket_manager.join_comments(websocket, content_type, content_id)
+    # Envoyer les commentaires initiaux
+    try:
+        from app.services.comment_service import get_comments
+        initial = await get_comments(content_id, content_type, skip=0, limit=50)
+        await websocket.send_text(json.dumps({
+            "type": "comments_init",
+            "comments": [_serialize(c) for c in initial],
+        }))
+    except Exception as e:
+        print(f"❌ Erreur init commentaires WS: {e}")
+
+    try:
+        while True:
+            await websocket.receive_text()  # keepalive — on ignore les messages entrants
+    except WebSocketDisconnect:
+        websocket_manager.leave_comments(websocket, content_type, content_id)
+    except Exception:
+        websocket_manager.leave_comments(websocket, content_type, content_id)
+
+
+def _serialize(obj) -> dict:
+    """Convertit un objet Beanie/dict en dict JSON-serializable"""
+    if isinstance(obj, dict):
+        d = obj
+    else:
+        d = obj.dict() if hasattr(obj, 'dict') else vars(obj)
+    result = {}
+    for k, v in d.items():
+        if hasattr(v, '__str__') and not isinstance(v, (str, int, float, bool, type(None), list, dict)):
+            result[k] = str(v)
+        else:
+            result[k] = v
+    return result
+
+
 def _check_admin_token(token: str) -> bool:
     """Vérification légère du token admin via JWT pour les commandes WS"""
     if not token:

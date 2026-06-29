@@ -19,11 +19,8 @@ from datetime import datetime
 
 async def add_comment(user_id: str, data: CommentCreate) -> Optional[Comment]:
     """Ajouter un commentaire avec validation du contenu"""
-    # Pour le livestream, pas besoin de vérifier l'existence du contenu
     if data.content_type != "livestream":
-        # Vérifier que le contenu existe
         content = await _get_content(data.content_type, data.content_id)
-
         if not content:
             return None
 
@@ -35,10 +32,24 @@ async def add_comment(user_id: str, data: CommentCreate) -> Optional[Comment]:
     )
     await comment.insert()
 
-    # Pour livestream, on n'incrémente pas le compteur sur un modèle
     if data.content_type != "livestream":
         await increment_comment(data.content_type, data.content_id, 1)
-    
+
+    # Broadcast temps réel aux abonnés WS
+    try:
+        user = await User.get(user_id)
+        comment_dict = comment.dict()
+        comment_dict['id'] = str(comment.id)
+        comment_dict['username'] = user.username if user else "Utilisateur inconnu"
+        comment_dict['avatar_url'] = user.avatar_url if user else None
+        from app.services.websocket_service import websocket_manager
+        await websocket_manager.broadcast_comment_event(
+            data.content_type, data.content_id,
+            {"type": "comment_added", "comment": comment_dict}
+        )
+    except Exception as e:
+        print(f"[WS] Erreur broadcast comment_added: {e}")
+
     return comment
 
 
@@ -146,18 +157,27 @@ async def delete_comment(comment_id: str, user_id: str, is_admin: bool = False) 
     comment = await Comment.get(comment_id)
     if not comment:
         return False
-    
+
     if comment.user_id != user_id and not is_admin:
         return False
-    
+
     content_id = comment.content_id
     content_type = comment.content_type
     await comment.delete()
-    
-    # Pour livestream, on n'incrémente pas le compteur sur un modèle
+
     if content_type != "livestream":
         await increment_comment(content_type, content_id, -1)
-    
+
+    # Broadcast temps réel aux abonnés WS
+    try:
+        from app.services.websocket_service import websocket_manager
+        await websocket_manager.broadcast_comment_event(
+            content_type, content_id,
+            {"type": "comment_deleted", "comment_id": comment_id}
+        )
+    except Exception as e:
+        print(f"[WS] Erreur broadcast comment_deleted: {e}")
+
     return True
 
 async def count_comments(content_id: str, content_type: str) -> int:

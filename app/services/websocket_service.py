@@ -276,5 +276,53 @@ class WebSocketManager:
         }
 
 
+    # ── Méthodes Comments temps réel ─────────────────────────────────────────
+
+    def _comment_room_key(self, content_type: str, content_id: str) -> str:
+        return f"{content_type}:{content_id}"
+
+    async def join_comments(self, websocket: WebSocket, content_type: str, content_id: str):
+        """Abonner une connexion aux commentaires d'un contenu"""
+        if not hasattr(self, 'comment_rooms'):
+            self.comment_rooms: Dict[str, List[WebSocket]] = {}
+        key = self._comment_room_key(content_type, content_id)
+        if key not in self.comment_rooms:
+            self.comment_rooms[key] = []
+        if websocket not in self.comment_rooms[key]:
+            self.comment_rooms[key].append(websocket)
+
+    def leave_comments(self, websocket: WebSocket, content_type: str = None, content_id: str = None):
+        """Désabonner une connexion (d'une room ou de toutes)"""
+        if not hasattr(self, 'comment_rooms'):
+            return
+        if content_type and content_id:
+            key = self._comment_room_key(content_type, content_id)
+            if key in self.comment_rooms and websocket in self.comment_rooms[key]:
+                self.comment_rooms[key].remove(websocket)
+        else:
+            for connections in self.comment_rooms.values():
+                if websocket in connections:
+                    connections.remove(websocket)
+
+    async def broadcast_comment_event(self, content_type: str, content_id: str, event: dict):
+        """Envoyer un événement commentaire à tous les abonnés de cette room"""
+        if not hasattr(self, 'comment_rooms'):
+            return
+        key = self._comment_room_key(content_type, content_id)
+        connections = self.comment_rooms.get(key, [])
+        if not connections:
+            return
+        msg_str = json.dumps(event)
+        dead = []
+        for ws in connections:
+            try:
+                await ws.send_text(msg_str)
+            except Exception:
+                dead.append(ws)
+        for ws in dead:
+            connections.remove(ws)
+
+
 # Instance globale du gestionnaire WebSocket
 websocket_manager = WebSocketManager()
+websocket_manager.comment_rooms: Dict[str, list] = {}
