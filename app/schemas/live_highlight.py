@@ -9,7 +9,7 @@ class LiveHighlightCreate(BaseModel):
     description: Optional[str] = None
     image_url: str
     video_url: Optional[str] = None
-    event_date: datetime
+    event_date: Optional[datetime] = None
     order: int = 0
     is_active: bool = True
 
@@ -38,7 +38,7 @@ class LiveHighlightOut(BaseModel):
     description: Optional[str] = None
     image_url: str
     video_url: Optional[str] = None
-    event_date: datetime
+    event_date: Optional[datetime] = None
     order: int
     is_active: bool
     created_at: datetime
