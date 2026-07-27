@@ -25,7 +25,7 @@ from app.api import (
     contact, comments, likes, messages, jtandmag, reel, reportage, divertissement, shares,
     programs, stats, user_settings, support, about, archives, liveStream, upload, views, username_generator,
     websocket, subscription_plans, emission_categories, search, series, carousel,
-    tele_realite, section_categories, missed
+    tele_realite, section_categories, missed, live_highlight
 )
 from app.api import sport
 from app.api import magazine
@@ -173,6 +173,7 @@ api_v1_router.include_router(messages.router, prefix="/messages", tags=["Message
 # ─── 4. Recherche & Navigation ────────────────────────────────────────────────
 api_v1_router.include_router(search.router, prefix="/search", tags=["Search"])
 api_v1_router.include_router(carousel.router, prefix="/carousel", tags=["Carousel"])
+api_v1_router.include_router(live_highlight.router, prefix="/live-highlights", tags=["Live Highlights"])
 api_v1_router.include_router(section_categories.router, prefix="/section-categories", tags=["Section Categories"])
 api_v1_router.include_router(emission_categories.router, prefix="/emission-categories", tags=["Emission Categories"])
 
