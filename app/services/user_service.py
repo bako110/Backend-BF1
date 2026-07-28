@@ -92,6 +92,7 @@ SECRET_KEY = os.getenv("JWT_SECRET_KEY", "changeme")
 ALGORITHM = "HS256"
 
 async def login_user_service(identifier: str, password: str):
+	identifier = identifier.strip()
 	print(f"🔐 Tentative de connexion avec: {identifier}")
 	# Recherche par email, username ou phone
 	user = await User.find_one({
