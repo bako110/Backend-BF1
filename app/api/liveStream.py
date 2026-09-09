@@ -350,58 +350,88 @@ async def clear_url_cache(current_user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Erreur effacement cache: {str(e)}")
 
 
-# ── Commentaires persistants du live ─────────────────────────────────────────
+# ── Chat live persistant (modèle LiveChatMessage, TTL 90 j) ──────────────────
+# Ces endpoints servent de fallback HTTP quand le WebSocket est indisponible et
+# de pagination "charger les messages plus anciens" (au-delà de la fenêtre 20 min
+# envoyée à la connexion WS).
 
 @router.get("/comments")
 async def get_live_comments(skip: int = 0, limit: int = 50):
-    """Récupérer les commentaires persistants du live (publics)"""
-    from app.services.comment_service import get_comments
+    """Récupérer les messages du chat live, du plus récent au plus ancien (paginé)."""
+    from app.models.live_chat_message import LiveChatMessage
     from app.services.websocket_service import websocket_manager
-    comments = await get_comments(LIVE_CONTENT_ID, LIVE_CONTENT_TYPE, skip, limit)
-    count = len(comments)
-    return {"comments": comments, "total": count, "chat_open": websocket_manager.chat_open}
+
+    limit = max(1, min(limit, 100))
+    docs = await LiveChatMessage.find(
+        LiveChatMessage.is_hidden == False,  # noqa: E712
+    ).sort(-LiveChatMessage.created_at).skip(skip).limit(limit + 1).to_list()
+
+    has_more = len(docs) > limit
+    docs = docs[:limit]
+    docs.reverse()  # ordre chronologique croissant pour affichage direct
+
+    comments = [websocket_manager._doc_to_dict(d) for d in docs]
+    return {
+        "comments": comments,
+        "total": len(comments),
+        "has_more": has_more,
+        "chat_open": websocket_manager.chat_open,
+    }
 
 
 @router.post("/comments")
 async def add_live_comment(body: dict, current_user=Depends(get_current_user)):
-    """Ajouter un commentaire persistant au live (authentifié requis)"""
-    from app.schemas.comment import CommentCreate
-    from app.services.comment_service import add_comment
+    """Ajouter un message au chat live (authentifié requis). Persiste + broadcast WS."""
+    from app.services.websocket_service import websocket_manager
 
     text = (body.get("text") or "").strip()
     if not text:
-        raise HTTPException(status_code=400, detail="Le texte du commentaire est requis")
-    if len(text) > 1000:
-        raise HTTPException(status_code=400, detail="Commentaire trop long (max 1000 caractères)")
+        raise HTTPException(status_code=400, detail="Le texte du message est requis")
+    if len(text) > 300:
+        raise HTTPException(status_code=400, detail="Message trop long (max 300 caractères)")
 
-    data = CommentCreate(
-        content_id=LIVE_CONTENT_ID,
-        content_type=LIVE_CONTENT_TYPE,
+    msg = await websocket_manager.add_chat_message(
+        user_id=str(current_user.id),
+        username=getattr(current_user, "username", None) or "Anonyme",
+        avatar_url=getattr(current_user, "avatar_url", None),
         text=text,
     )
-    comment = await add_comment(str(current_user.id), data)
-    if not comment:
-        raise HTTPException(status_code=500, detail="Erreur lors de l'ajout du commentaire")
-    return comment
+    if msg is None:
+        raise HTTPException(status_code=403, detail="Le chat est actuellement fermé")
+    return msg
 
 
 @router.delete("/comments/{comment_id}")
 async def delete_live_comment(comment_id: str, current_user=Depends(get_current_user)):
-    """Supprimer un commentaire du live (auteur ou admin)"""
-    from app.services.comment_service import delete_comment
+    """Supprimer un message du chat live (auteur ou admin). Broadcast WS."""
+    from app.models.live_chat_message import LiveChatMessage
+    from app.services.websocket_service import websocket_manager
+
+    doc = await LiveChatMessage.get(comment_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Message introuvable")
     is_admin = getattr(current_user, "is_admin", False)
-    ok = await delete_comment(comment_id, str(current_user.id), is_admin)
-    if not ok:
-        raise HTTPException(status_code=404, detail="Commentaire introuvable ou non autorisé")
+    if str(doc.user_id) != str(current_user.id) and not is_admin:
+        raise HTTPException(status_code=403, detail="Non autorisé")
+    await websocket_manager.delete_chat_message(comment_id)
     return {"ok": True}
 
 
 @router.patch("/comments/{comment_id}/moderate")
 async def moderate_live_comment(comment_id: str, body: dict, current_user=Depends(get_admin_user)):
-    """Masquer/afficher un commentaire du live (admin seulement)"""
-    from app.services.comment_service import moderate_comment
+    """Masquer/afficher un message du chat live (admin seulement). Broadcast WS."""
+    from app.services.websocket_service import websocket_manager
     is_hidden = bool(body.get("is_hidden", True))
-    updated = await moderate_comment(comment_id, is_hidden, str(current_user.id))
-    if not updated:
-        raise HTTPException(status_code=404, detail="Commentaire introuvable")
-    return updated
+    if is_hidden:
+        ok = await websocket_manager.hide_chat_message(comment_id)
+    else:
+        from app.models.live_chat_message import LiveChatMessage
+        doc = await LiveChatMessage.get(comment_id)
+        if not doc:
+            raise HTTPException(status_code=404, detail="Message introuvable")
+        doc.is_hidden = False
+        await doc.save()
+        ok = True
+    if not ok:
+        raise HTTPException(status_code=404, detail="Message introuvable")
+    return {"ok": True, "is_hidden": is_hidden}

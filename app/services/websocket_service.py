@@ -3,7 +3,10 @@ from typing import List, Dict, Optional
 import json
 import asyncio
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
+
+# Fenêtre glissante affichée à l'arrivée sur le live : les 20 dernières minutes.
+CHAT_HISTORY_WINDOW_MINUTES = 20
 
 class WebSocketManager:
     def __init__(self):
@@ -16,12 +19,14 @@ class WebSocketManager:
         self.livestream_connections: List[WebSocket] = []
 
         # ── Chat live ────────────────────────────────────────────────────────
-        # Historique des messages en mémoire (max 200)
+        # Les messages sont désormais persistés en base (modèle LiveChatMessage).
+        # On garde un petit cache RAM des messages récents uniquement pour servir
+        # instantanément les commandes admin (hide/delete) sans aller-retour DB.
         self.chat_messages: List[dict] = []
         self.MAX_CHAT_MESSAGES = 200
-        # IDs des messages masqués/supprimés par l'admin
+        # IDs des messages masqués/supprimés par l'admin (miroir du champ is_hidden)
         self.hidden_message_ids: set = set()
-        # Statut du chat (ouvert / fermé par l'admin)
+        # Statut du chat (ouvert / fermé par l'admin) — volatil, RAM only
         self.chat_open: bool = True
     
     async def connect(self, websocket: WebSocket, client_id: str = None):
@@ -177,30 +182,43 @@ class WebSocketManager:
 
     # ── Méthodes Chat Live ────────────────────────────────────────────────────
 
-    def _visible_messages(self) -> List[dict]:
-        """Retourne les messages non masqués (pour broadcast)"""
-        return [m for m in self.chat_messages if m['id'] not in self.hidden_message_ids]
+    @staticmethod
+    def _doc_to_dict(doc) -> dict:
+        """Sérialise un LiveChatMessage pour le WS/REST."""
+        return {
+            "id": str(doc.id),
+            "user_id": doc.user_id,
+            "username": doc.username,
+            "avatar_url": doc.avatar_url,
+            "text": doc.text,
+            "edited": doc.edited,
+            "created_at": doc.created_at.isoformat(),
+        }
+
+    def _cache_push(self, msg: dict) -> None:
+        """Garde les MAX_CHAT_MESSAGES derniers messages en cache RAM."""
+        self.chat_messages.append(msg)
+        if len(self.chat_messages) > self.MAX_CHAT_MESSAGES:
+            self.chat_messages = self.chat_messages[-self.MAX_CHAT_MESSAGES:]
 
     async def add_chat_message(self, user_id: Optional[str], username: str,
                                avatar_url: Optional[str], text: str) -> Optional[dict]:
-        """Ajouter un message chat et broadcaster à tous les spectateurs du live.
+        """Persister un message chat en base et le broadcaster aux spectateurs.
         Retourne None si le chat est fermé."""
         if not self.chat_open:
             return None
 
-        msg = {
-            "id": str(uuid.uuid4()),
-            "user_id": user_id,
-            "username": username,
-            "avatar_url": avatar_url,
-            "text": text,
-            "created_at": datetime.utcnow().isoformat(),
-        }
+        from app.models.live_chat_message import LiveChatMessage
+        doc = LiveChatMessage(
+            user_id=str(user_id) if user_id is not None else None,
+            username=username or "Anonyme",
+            avatar_url=avatar_url,
+            text=text,
+        )
+        await doc.insert()
 
-        self.chat_messages.append(msg)
-        # Garder seulement les MAX_CHAT_MESSAGES derniers
-        if len(self.chat_messages) > self.MAX_CHAT_MESSAGES:
-            self.chat_messages = self.chat_messages[-self.MAX_CHAT_MESSAGES:]
+        msg = self._doc_to_dict(doc)
+        self._cache_push(msg)
 
         await self.broadcast_to_livestream({
             "type": "chat_message",
@@ -209,8 +227,17 @@ class WebSocketManager:
         return msg
 
     async def hide_chat_message(self, message_id: str) -> bool:
-        """Masquer un message (admin). Broadcaster l'événement."""
+        """Masquer un message (admin). Persiste is_hidden=True et broadcaste."""
         self.hidden_message_ids.add(message_id)
+        try:
+            from app.models.live_chat_message import LiveChatMessage
+            doc = await LiveChatMessage.get(message_id)
+            if doc:
+                doc.is_hidden = True
+                await doc.save()
+        except Exception as e:
+            print(f"[WS] hide_chat_message DB: {e}")
+        self.chat_messages = [m for m in self.chat_messages if m['id'] != message_id]
         await self.broadcast_to_livestream({
             "type": "chat_message_hidden",
             "message_id": message_id
@@ -218,9 +245,16 @@ class WebSocketManager:
         return True
 
     async def delete_chat_message(self, message_id: str) -> bool:
-        """Supprimer définitivement un message (admin). Broadcaster l'événement."""
+        """Supprimer définitivement un message (admin). Supprime en base et broadcaste."""
         self.chat_messages = [m for m in self.chat_messages if m['id'] != message_id]
         self.hidden_message_ids.discard(message_id)
+        try:
+            from app.models.live_chat_message import LiveChatMessage
+            doc = await LiveChatMessage.get(message_id)
+            if doc:
+                await doc.delete()
+        except Exception as e:
+            print(f"[WS] delete_chat_message DB: {e}")
         await self.broadcast_to_livestream({
             "type": "chat_message_deleted",
             "message_id": message_id
@@ -228,18 +262,32 @@ class WebSocketManager:
         return True
 
     async def edit_chat_message(self, message_id: str, new_text: str) -> bool:
-        """Modifier le texte d'un message. Broadcaster l'événement."""
+        """Modifier le texte d'un message. Persiste et broadcaste."""
+        ok = False
+        try:
+            from app.models.live_chat_message import LiveChatMessage
+            doc = await LiveChatMessage.get(message_id)
+            if doc:
+                doc.text = new_text
+                doc.edited = True
+                await doc.save()
+                ok = True
+        except Exception as e:
+            print(f"[WS] edit_chat_message DB: {e}")
+
         for msg in self.chat_messages:
             if msg['id'] == message_id:
                 msg['text'] = new_text
                 msg['edited'] = True
-                await self.broadcast_to_livestream({
-                    "type": "chat_message_edited",
-                    "message_id": message_id,
-                    "text": new_text,
-                })
-                return True
-        return False
+                ok = True
+
+        if ok:
+            await self.broadcast_to_livestream({
+                "type": "chat_message_edited",
+                "message_id": message_id,
+                "text": new_text,
+            })
+        return ok
 
     async def set_chat_open(self, open: bool) -> None:
         """Ouvrir ou fermer le chat (admin). Broadcaster l'état à toutes les connexions."""
@@ -253,25 +301,44 @@ class WebSocketManager:
         })
 
     async def clear_chat(self) -> None:
-        """Vider tout le chat (admin)."""
+        """Vider tout le chat (admin) : supprime tous les messages persistés."""
         self.chat_messages.clear()
         self.hidden_message_ids.clear()
+        try:
+            from app.models.live_chat_message import LiveChatMessage
+            await LiveChatMessage.find_all().delete()
+        except Exception as e:
+            print(f"[WS] clear_chat DB: {e}")
         await self.broadcast({
             "type": "chat_cleared",
             "message": "Le chat a été vidé par l'administrateur."
         })
 
-    def get_chat_history(self, limit: int = 50) -> List[dict]:
-        """Retourne les derniers messages visibles."""
-        visible = self._visible_messages()
-        return visible[-limit:]
+    async def get_chat_history(self, limit: int = 200) -> List[dict]:
+        """Retourne les messages visibles de la fenêtre glissante (20 dernières minutes).
 
-    def get_chat_state(self) -> dict:
+        `limit` borne le volume renvoyé sur un live très actif ; l'ordre est
+        chronologique (plus ancien -> plus récent) pour un affichage direct.
+        """
+        from app.models.live_chat_message import LiveChatMessage
+        since = datetime.utcnow() - timedelta(minutes=CHAT_HISTORY_WINDOW_MINUTES)
+        docs = await LiveChatMessage.find(
+            LiveChatMessage.created_at >= since,
+            LiveChatMessage.is_hidden == False,  # noqa: E712
+        ).sort(-LiveChatMessage.created_at).limit(limit).to_list()
+        docs.reverse()  # -> ordre chronologique croissant
+
+        msgs = [self._doc_to_dict(d) for d in docs]
+        # Réamorcer le cache RAM avec ces messages récents
+        self.chat_messages = msgs[-self.MAX_CHAT_MESSAGES:]
+        return msgs
+
+    async def get_chat_state(self) -> dict:
         """Retourne l'état complet du chat (pour un nouveau connecté)."""
         return {
             "type": "chat_init",
             "open": self.chat_open,
-            "messages": self.get_chat_history(50),
+            "messages": await self.get_chat_history(200),
             "viewers": self.get_livestream_viewer_count(),
         }
 

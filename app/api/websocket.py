@@ -32,9 +32,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 elif mtype == "join_livestream":
                     user_id = msg.get("user_id")
                     await websocket_manager.join_livestream(websocket, user_id)
-                    # Envoyer l'historique chat + état du chat au nouvel arrivant
+                    # Envoyer l'historique chat (fenêtre 20 min) + état du chat au nouvel arrivant
+                    chat_state = await websocket_manager.get_chat_state()
                     await websocket.send_text(json.dumps({
-                        **websocket_manager.get_chat_state(),
+                        **chat_state,
                         "type": "joined_livestream",
                         "total_viewers": websocket_manager.get_livestream_viewer_count(),
                     }))
@@ -170,13 +171,22 @@ async def websocket_status():
 
 
 @router.get("/ws/chat/messages")
-async def get_chat_messages(current_user=Depends(get_admin_user)):
-    """Admin : récupérer tous les messages (y compris masqués)"""
+async def get_chat_messages(current_user=Depends(get_admin_user), limit: int = 200):
+    """Admin : récupérer les derniers messages persistés (y compris masqués)"""
+    from app.models.live_chat_message import LiveChatMessage
+    docs = await LiveChatMessage.find_all().sort(-LiveChatMessage.created_at).limit(limit).to_list()
+    docs.reverse()
+    messages = []
+    for d in docs:
+        m = websocket_manager._doc_to_dict(d)
+        m["is_hidden"] = d.is_hidden
+        messages.append(m)
+    total = await LiveChatMessage.find_all().count()
     return {
-        "messages": websocket_manager.chat_messages,
-        "hidden_ids": list(websocket_manager.hidden_message_ids),
+        "messages": messages,
+        "hidden_ids": [m["id"] for m in messages if m.get("is_hidden")],
         "chat_open": websocket_manager.chat_open,
-        "total": len(websocket_manager.chat_messages),
+        "total": total,
     }
 
 
@@ -220,11 +230,12 @@ async def clear_chat(current_user=Depends(get_admin_user)):
 @router.delete("/ws/chat/my/{message_id}")
 async def user_delete_own_message(message_id: str, current_user=Depends(get_current_user)):
     """User : supprimer son propre message chat"""
+    from app.models.live_chat_message import LiveChatMessage
     user_id = str(current_user.id)
-    msg = next((m for m in websocket_manager.chat_messages if m['id'] == message_id), None)
-    if not msg:
+    doc = await LiveChatMessage.get(message_id)
+    if not doc:
         raise HTTPException(status_code=404, detail="Message introuvable")
-    if str(msg.get("user_id")) != user_id:
+    if str(doc.user_id) != user_id and not getattr(current_user, "is_admin", False):
         raise HTTPException(status_code=403, detail="Ce message ne vous appartient pas")
     await websocket_manager.delete_chat_message(message_id)
     return {"ok": True, "message_id": message_id}
@@ -233,14 +244,15 @@ async def user_delete_own_message(message_id: str, current_user=Depends(get_curr
 @router.patch("/ws/chat/my/{message_id}")
 async def user_edit_own_message(message_id: str, body: EditMessageBody, current_user=Depends(get_current_user)):
     """User : modifier son propre message chat"""
+    from app.models.live_chat_message import LiveChatMessage
     user_id = str(current_user.id)
     new_text = body.text.strip()
     if not new_text or len(new_text) > 300:
         raise HTTPException(status_code=400, detail="Texte invalide")
-    msg = next((m for m in websocket_manager.chat_messages if m['id'] == message_id), None)
-    if not msg:
+    doc = await LiveChatMessage.get(message_id)
+    if not doc:
         raise HTTPException(status_code=404, detail="Message introuvable")
-    if str(msg.get("user_id")) != user_id:
+    if str(doc.user_id) != user_id and not getattr(current_user, "is_admin", False):
         raise HTTPException(status_code=403, detail="Ce message ne vous appartient pas")
     await websocket_manager.edit_chat_message(message_id, new_text)
     return {"ok": True, "message_id": message_id, "text": new_text}

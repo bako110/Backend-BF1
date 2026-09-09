@@ -30,6 +30,7 @@ from app.models.emission_category import EmissionCategory
 from app.models.series import Series, Season, Episode
 from app.models.carousel import CarouselItem
 from app.models.live_highlight import LiveHighlight
+from app.models.live_chat_message import LiveChatMessage
 from app.models.tele_realite import TeleRealite
 from app.models.section_category import SectionCategory
 from app.models.view_log import ViewLog
@@ -62,6 +63,6 @@ async def init_db():
             ArchivePurchase, PaymentMethod, RecordingSession, Sport, EmissionCategory, ContactMessageDoc,
             Series, Season, Episode, CarouselItem,
             TeleRealite, SectionCategory, ViewLog, Missed,
-            AdminNotification, Magazine, LiveHighlight,
+            AdminNotification, Magazine, LiveHighlight, LiveChatMessage,
         ]
     )
