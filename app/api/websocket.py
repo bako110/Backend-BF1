@@ -227,15 +227,27 @@ async def clear_chat(current_user=Depends(get_admin_user)):
 
 # ── Endpoints utilisateur (propres messages) ──────────────────────────────────
 
+async def _get_chat_doc_or_404(message_id: str):
+    """Recupere un LiveChatMessage en tolerant un id malforme (-> 404 au lieu de 500)."""
+    from app.models.live_chat_message import LiveChatMessage
+    try:
+        doc = await LiveChatMessage.get(message_id)
+    except Exception:
+        doc = None
+    if not doc:
+        raise HTTPException(status_code=404, detail="Message introuvable")
+    return doc
+
+
+def _can_modify(doc, current_user) -> bool:
+    return str(doc.user_id) == str(current_user.id) or bool(getattr(current_user, "is_admin", False))
+
+
 @router.delete("/ws/chat/my/{message_id}")
 async def user_delete_own_message(message_id: str, current_user=Depends(get_current_user)):
     """User : supprimer son propre message chat"""
-    from app.models.live_chat_message import LiveChatMessage
-    user_id = str(current_user.id)
-    doc = await LiveChatMessage.get(message_id)
-    if not doc:
-        raise HTTPException(status_code=404, detail="Message introuvable")
-    if str(doc.user_id) != user_id and not getattr(current_user, "is_admin", False):
+    doc = await _get_chat_doc_or_404(message_id)
+    if not _can_modify(doc, current_user):
         raise HTTPException(status_code=403, detail="Ce message ne vous appartient pas")
     await websocket_manager.delete_chat_message(message_id)
     return {"ok": True, "message_id": message_id}
@@ -244,15 +256,11 @@ async def user_delete_own_message(message_id: str, current_user=Depends(get_curr
 @router.patch("/ws/chat/my/{message_id}")
 async def user_edit_own_message(message_id: str, body: EditMessageBody, current_user=Depends(get_current_user)):
     """User : modifier son propre message chat"""
-    from app.models.live_chat_message import LiveChatMessage
-    user_id = str(current_user.id)
     new_text = body.text.strip()
     if not new_text or len(new_text) > 300:
         raise HTTPException(status_code=400, detail="Texte invalide")
-    doc = await LiveChatMessage.get(message_id)
-    if not doc:
-        raise HTTPException(status_code=404, detail="Message introuvable")
-    if str(doc.user_id) != user_id and not getattr(current_user, "is_admin", False):
+    doc = await _get_chat_doc_or_404(message_id)
+    if not _can_modify(doc, current_user):
         raise HTTPException(status_code=403, detail="Ce message ne vous appartient pas")
     await websocket_manager.edit_chat_message(message_id, new_text)
     return {"ok": True, "message_id": message_id, "text": new_text}

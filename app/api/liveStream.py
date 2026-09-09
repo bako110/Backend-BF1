@@ -407,7 +407,10 @@ async def delete_live_comment(comment_id: str, current_user=Depends(get_current_
     from app.models.live_chat_message import LiveChatMessage
     from app.services.websocket_service import websocket_manager
 
-    doc = await LiveChatMessage.get(comment_id)
+    try:
+        doc = await LiveChatMessage.get(comment_id)
+    except Exception:
+        doc = None
     if not doc:
         raise HTTPException(status_code=404, detail="Message introuvable")
     is_admin = getattr(current_user, "is_admin", False)
