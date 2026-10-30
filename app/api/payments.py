@@ -12,17 +12,18 @@ class PaymentRequest(BaseModel):
 	method: str = Field(..., description="Méthode: orange, mtn, intouch, etc.")
 	offer: Optional[str] = Field(None, description="Code promo ou offre")
 
-@router.post("/process", status_code=status.HTTP_201_CREATED)
-async def process_payment(payment: PaymentRequest, current_user=Depends(get_current_user)):
-	"""Traiter un paiement (Orange Money, MTN, InTouch, etc.)"""
-	# TODO: Intégrer l'API de paiement réelle
-	return {
-		"success": True,
-		"message": "Paiement en cours de traitement",
-		"transaction_id": f"MOCK-{current_user.id}-123456",
-		"amount": payment.amount,
-		"method": payment.method
-	}
+# DÉSACTIVÉ (guideline Apple 3.1.1) : paiement non branché sur un vrai système, accès gratuit possible.
+# @router.post("/process", status_code=status.HTTP_201_CREATED)
+# async def process_payment(payment: PaymentRequest, current_user=Depends(get_current_user)):
+# 	"""Traiter un paiement (Orange Money, MTN, InTouch, etc.)"""
+# 	# TODO: Intégrer l'API de paiement réelle
+# 	return {
+# 		"success": True,
+# 		"message": "Paiement en cours de traitement",
+# 		"transaction_id": f"MOCK-{current_user.id}-123456",
+# 		"amount": payment.amount,
+# 		"method": payment.method
+# 	}
 
 @router.get("/methods")
 async def get_payment_methods():

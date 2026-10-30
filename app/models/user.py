@@ -15,6 +15,7 @@ class User(Document):
     subscription_category: Optional[str] = Field(None, description="Catégorie d'abonnement active: basic, standard ou premium")
     is_admin: bool = Field(False, description="Administrateur ?")
     avatar_url: Optional[str] = Field(None, description="URL de la photo de profil")
+    apple_sub: Optional[str] = Field(None, description="Identifiant stable Sign in with Apple")
     
     # Informations de localisation pour adapter les prix
     location_country_code: Optional[str] = Field(None, description="Code pays de l'utilisateur (ex: BF)")

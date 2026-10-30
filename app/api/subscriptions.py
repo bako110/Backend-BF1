@@ -20,10 +20,11 @@ async def list_all_subscriptions(current_user=Depends(get_admin_user), skip: int
     """Lister tous les abonnements (admin seulement)"""
     return await get_all_subscriptions(skip, limit)
 
-@router.post("")
-async def add_subscription(sub: SubscriptionCreate, current_user=Depends(get_current_user)):
-    """Créer un abonnement"""
-    return await create_subscription(sub)
+# DÉSACTIVÉ (guideline Apple 3.1.1) : paiement non branché sur un vrai système, accès gratuit possible.
+# @router.post("")
+# async def add_subscription(sub: SubscriptionCreate, current_user=Depends(get_current_user)):
+#     """Créer un abonnement"""
+#     return await create_subscription(sub)
 
 @router.get("/me")
 async def get_my_subscriptions(current_user=Depends(get_current_user)):

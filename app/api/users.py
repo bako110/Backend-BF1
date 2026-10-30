@@ -348,6 +348,90 @@ async def google_mobile_auth(body: GoogleMobileTokenRequest):
         raise HTTPException(status_code=500, detail="Erreur serveur Google OAuth")
 
 
+class AppleTokenRequest(BaseModel):
+    identity_token: str
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+
+APPLE_BUNDLE_ID = os.getenv("APPLE_BUNDLE_ID", "com.bf1app")
+
+@router.post("/auth/apple")
+async def apple_auth(body: AppleTokenRequest):
+    """Vérifier un identityToken Sign in with Apple et retourner un JWT BF1."""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            keys = (await client.get("https://appleid.apple.com/auth/keys")).json()
+        try:
+            claims = jose_jwt.decode(
+                body.identity_token, keys, algorithms=["RS256"],
+                audience=APPLE_BUNDLE_ID, issuer="https://appleid.apple.com",
+            )
+        except Exception:
+            raise HTTPException(status_code=401, detail="Token Apple invalide")
+
+        apple_sub = claims.get("sub", "")
+        if not apple_sub:
+            raise HTTPException(status_code=401, detail="Token Apple invalide")
+        real_email = (claims.get("email") or body.email or "").lower().strip()
+        is_relay = lambda e: bool(e) and e.endswith("@privaterelay.appleid.com")
+        full_name = (body.full_name or "").strip()
+
+        # 1) compte déjà lié à cet identifiant Apple, 2) compte existant avec le même email
+        user = await User.find_one({"apple_sub": apple_sub})
+        if not user and real_email:
+            user = await User.find_one({"email": real_email})
+
+        if not user:
+            # Apple ne renvoie nom/email qu'à la toute première connexion
+            email = real_email or f"{apple_sub}@privaterelay.appleid.com"
+            base = (full_name or "").replace(" ", "_")[:20] or f"Utilisateur_{apple_sub[-6:]}"
+            username = base
+            if await User.find_one({"username": username}):
+                username = f"{base}_{apple_sub[-6:]}"
+            user = User(
+                email=email,
+                username=username,
+                apple_sub=apple_sub,
+                hashed_password=_pwd_context.hash(secrets.token_hex(32)),
+            )
+            await user.insert()
+        else:
+            changed = False
+            if user.apple_sub != apple_sub:
+                user.apple_sub = apple_sub
+                changed = True
+            # Compléter le profil si les infos arrivent enfin (ou si l'email était un relais)
+            if real_email and (not user.email or is_relay(user.email)) and not is_relay(real_email):
+                if not await User.find_one({"email": real_email}):
+                    user.email = real_email
+                    changed = True
+            if full_name and user.username.startswith("Utilisateur_"):
+                new_name = full_name.replace(" ", "_")[:20]
+                if new_name and not await User.find_one({"username": new_name}):
+                    user.username = new_name
+                    changed = True
+            if changed:
+                user.updated_at = datetime.utcnow()
+                await user.save()
+
+        bf1_token = jose_jwt.encode({"sub": str(user.id)}, SECRET_KEY, algorithm=ALGORITHM)
+        return {
+            "access_token": bf1_token,
+            "user": {
+                "id": str(user.id),
+                "email": user.email,
+                "username": user.username,
+                "is_premium": user.is_premium,
+                "is_active": user.is_active,
+                "avatar_url": user.avatar_url,
+            },
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[AppleAuth] Erreur: {exc}")
+        raise HTTPException(status_code=500, detail="Erreur serveur Apple Sign In")
+
 
 @router.get("")
 async def get_all_users(page: int = 1, limit: int = 20, current_user=Depends(get_admin_user)):
@@ -487,6 +571,32 @@ async def unban_user(user_id: str, current_user=Depends(get_admin_user)):
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
     return user
+
+
+@router.delete("/me")
+async def delete_my_account(current_user=Depends(get_current_user)):
+    """Supprimer définitivement le compte de l'utilisateur connecté et ses données."""
+    uid = str(current_user.id)
+    from app.models.favorite import Favorite
+    from app.models.comment import Comment
+    from app.models.like import Like
+    from app.models.notification import Notification
+    from app.models.user_settings import UserSettings
+    from app.models.share import Share
+    from app.models.subscription import Subscription
+    from app.models.archive_purchase import ArchivePurchase
+    from app.models.support import SupportTicket
+    from app.models.program import ProgramReminder
+    from app.models.feedback import Feedback
+    from app.models.live_chat_message import LiveChatMessage
+    for model in (Favorite, Comment, Like, Notification, UserSettings, Share,
+                  Subscription, ArchivePurchase, SupportTicket, ProgramReminder):
+        await model.find({"user_id": uid}).delete()
+    # Contenus anonymisables : on détache l'auteur plutôt que de supprimer
+    for model in (Feedback, LiveChatMessage):
+        await model.find({"user_id": uid}).update({"$set": {"user_id": None}})
+    await current_user.delete()
+    return {"ok": True}
 
 
 @router.delete("/{user_id}")
